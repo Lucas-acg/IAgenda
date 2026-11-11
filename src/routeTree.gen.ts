@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CalendarioRouteImport } from './routes/calendario'
+import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as EstatisticasRouteImport } from './routes/estatisticas'
 
 const IndexRoute = IndexRouteImport.update({
@@ -23,6 +24,11 @@ const CalendarioRoute = CalendarioRouteImport.update({
   path: '/calendario',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
+  id: '/configuracoes',
+  path: '/configuracoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EstatisticasRoute = EstatisticasRouteImport.update({
   id: '/estatisticas',
   path: '/estatisticas',
@@ -32,30 +38,34 @@ const EstatisticasRoute = EstatisticasRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/calendario': typeof CalendarioRoute
+  '/configuracoes': typeof ConfiguracoesRoute
   '/estatisticas': typeof EstatisticasRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/calendario': typeof CalendarioRoute
+  '/configuracoes': typeof ConfiguracoesRoute
   '/estatisticas': typeof EstatisticasRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/calendario': typeof CalendarioRoute
+  '/configuracoes': typeof ConfiguracoesRoute
   '/estatisticas': typeof EstatisticasRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/calendario' | '/estatisticas'
+  fullPaths: '/' | '/calendario' | '/configuracoes' | '/estatisticas'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/calendario' | '/estatisticas'
-  id: '__root__' | '/' | '/calendario' | '/estatisticas'
+  to: '/' | '/calendario' | '/configuracoes' | '/estatisticas'
+  id: '__root__' | '/' | '/calendario' | '/configuracoes' | '/estatisticas'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CalendarioRoute: typeof CalendarioRoute
+  ConfiguracoesRoute: typeof ConfiguracoesRoute
   EstatisticasRoute: typeof EstatisticasRoute
 }
 
@@ -75,6 +85,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CalendarioRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/configuracoes': {
+      id: '/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/configuracoes'
+      preLoaderRoute: typeof ConfiguracoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/estatisticas': {
       id: '/estatisticas'
       path: '/estatisticas'
@@ -88,6 +105,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CalendarioRoute: CalendarioRoute,
+  ConfiguracoesRoute: ConfiguracoesRoute,
   EstatisticasRoute: EstatisticasRoute,
 }
 export const routeTree = rootRouteImport
