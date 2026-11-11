@@ -66,3 +66,7 @@ export function Section({ title, children, right, className }: { title: string; 
     </section>
   );
 }
+
+export const ENTRY_DOT: Record<EntryType, string> = {
+  sono: "bg-sleep", alimentacao: "bg-food", exercicio: "bg-exercise", agua: "bg-water", outro: "bg-other",
+};

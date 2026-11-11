@@ -6,6 +6,7 @@ import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { recordsOn, toISODate, useStore } from "@/lib/store";
 import { PageHeader } from "@/components/app/shared";
+import { ENTRY_DOT } from "@/components/app/shared";
 import { DayRecords } from "@/components/app/day-records";
 import { cn } from "@/lib/utils";
 
@@ -69,7 +70,7 @@ function Calendario() {
                   <span className={cn("grid size-7 place-items-center rounded-full text-sm font-semibold", iso === today && "bg-primary text-primary-foreground")}>{format(d, "d")}</span>
                   <span className="flex flex-wrap justify-center gap-0.5 md:justify-start">
                     {r.appointments.length > 0 && <span className="size-1.5 rounded-full bg-future md:size-2" />}
-                    {r.entries.slice(0, 3).map((e) => <span key={e.id} className={cn("size-1.5 rounded-full md:size-2", `bg-${e.type === "agua" ? "water" : e.type === "sono" ? "sleep" : e.type === "alimentacao" ? "food" : e.type === "exercicio" ? "exercise" : "other"}`)} />)}
+                    {r.entries.slice(0, 3).map((e) => <span key={e.id} className={cn("size-1.5 rounded-full md:size-2", ENTRY_DOT[e.type])} />)}
                     {r.habits.length > 0 && <span className="size-1.5 rounded-full bg-habit md:size-2" />}
                   </span>
                   {view === "semana" && <span className="hidden w-full space-y-0.5 text-left md:block">
