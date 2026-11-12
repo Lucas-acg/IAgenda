@@ -12,6 +12,9 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { ENTRY_LABEL, appointmentStatus, toISODate, uid, useStore, type AppData, type EntryType } from "@/lib/store";
 import { PageHeader } from "@/components/app/shared";
 import { cn } from "@/lib/utils";
+import { AppearanceSettings } from "@/components/app/appearance-settings";
+import { normalizeAppearance } from "@/lib/appearance";
+import { defaultData } from "@/lib/store";
 
 export const Route = createFileRoute("/configuracoes")({
   head: () => ({
@@ -40,7 +43,7 @@ type Key = (typeof SECTIONS)[number]["k"];
 function Configuracoes() {
   const [active, setActive] = useState<Key>("perfil");
   const [mobileOpen, setMobileOpen] = useState<Key | null>(null);
-  const cur = SECTIONS.find((s) => s.k === (mobileOpen ?? active))!;
+  const cur = SECTIONS.find((s) => s.k === (mobileOpen ?? active)) ?? SECTIONS[0];
   return (
     <div>
       {/* Mobile: list → dedicated screen */}
@@ -56,11 +59,11 @@ function Configuracoes() {
             <PageHeader title="Configurações" />
             <ul className="card-soft divide-y overflow-hidden">
               {SECTIONS.map((s) => (
-                <li key={s.k}><button onClick={() => setMobileOpen(s.k)} className="flex min-h-16 w-full items-center gap-3 px-4 py-3 text-left active:bg-muted">
+                <li key={s.k}><Button variant="ghost" onClick={() => setMobileOpen(s.k)} className="flex h-auto min-h-16 w-full justify-start gap-3 whitespace-normal rounded-none px-4 py-3 text-left active:bg-muted">
                   <span className="grid size-10 place-items-center rounded-xl bg-primary-soft text-primary"><s.icon className="size-5" aria-hidden /></span>
                   <span className="min-w-0 flex-1"><span className="block font-semibold">{s.l}</span><span className="block truncate text-sm text-muted-foreground">{s.d}</span></span>
                   <ChevronRight className="size-5 text-muted-foreground" aria-hidden />
-                </button></li>
+                </Button></li>
               ))}
             </ul>
           </>
@@ -69,16 +72,16 @@ function Configuracoes() {
       {/* Desktop: internal side menu */}
       <div className="hidden md:block">
         <PageHeader title="Configurações" subtitle="Personalize o IAgenda" />
-        <div className="grid grid-cols-[240px_1fr] gap-6">
+        <div className="grid grid-cols-[180px_minmax(0,1fr)] gap-5 xl:grid-cols-[230px_minmax(0,1fr)]">
           <nav aria-label="Seções" className="space-y-1">
             {SECTIONS.map((s) => (
-              <button key={s.k} onClick={() => setActive(s.k)} aria-current={active === s.k ? "page" : undefined}
-                className={cn("flex h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium", active === s.k ? "bg-primary-soft text-sidebar-accent-foreground" : "text-muted-foreground hover:bg-muted")}>
+              <Button variant="ghost" key={s.k} onClick={() => setActive(s.k)} aria-current={active === s.k ? "page" : undefined}
+                className={cn("flex h-auto min-h-11 w-full justify-start gap-3 whitespace-normal rounded-xl px-3 py-3 text-left text-sm font-medium", active === s.k ? "bg-primary-soft text-sidebar-accent-foreground" : "text-muted-foreground hover:bg-muted")}>
                 <s.icon className="size-4" aria-hidden />{s.l}
-              </button>
+              </Button>
             ))}
           </nav>
-          <div className="card-soft p-6">
+          <div className="min-w-0 border-l pl-5 xl:pl-8">
             <h2 className="font-display text-xl font-bold">{cur.l}</h2>
             <p className="mb-5 text-sm text-muted-foreground">{cur.d}</p>
             <SectionBody k={active} />
@@ -247,15 +250,15 @@ function Preferences() {
     const url = URL.createObjectURL(blob); const a = document.createElement("a");
     a.href = url; a.download = `iagenda-backup-${toISODate(new Date())}.json`; a.click(); URL.revokeObjectURL(url);
   };
-  const importData = (file: File) => file.text().then((t) => { try { const parsed = JSON.parse(t) as AppData; if (!Array.isArray(parsed.appointments)) throw new Error(); setData(() => parsed); toast.success("Backup restaurado"); } catch { toast.error("Arquivo de backup inválido."); } });
+  const importData = (file: File) => file.text().then((t) => { try { const parsed = JSON.parse(t) as Partial<AppData>; if (!Array.isArray(parsed.appointments) || !Array.isArray(parsed.entries) || !Array.isArray(parsed.habits) || !Array.isArray(parsed.reminders) || !Array.isArray(parsed.importantDays)) throw new Error(); const base = defaultData(); setData(() => ({ ...base, ...parsed, profile: { ...base.profile, ...parsed.profile }, prefs: { ...base.prefs, ...parsed.prefs, ...normalizeAppearance(parsed.prefs) } })); toast.success("Backup restaurado"); } catch { toast.error("Arquivo de backup inválido."); } });
   const Row = ({ id, title, desc, children }: { id: string; title: string; desc: string; children: ReactNode }) => (
-    <div className="flex items-center justify-between gap-4 rounded-2xl border p-4"><div><Label htmlFor={id} className="font-semibold">{title}</Label><p className="text-sm text-muted-foreground">{desc}</p></div>{children}</div>
+    <div className="flex items-center justify-between gap-4 border-b py-4"><div className="min-w-0"><Label htmlFor={id} className="font-semibold">{title}</Label><p className="text-sm text-muted-foreground">{desc}</p></div><div className="shrink-0">{children}</div></div>
   );
   return (
     <div className="space-y-3">
       <Row id="pr-notif" title="Notificações" desc="Avisos de lembretes enquanto o app estiver aberto."><Switch id="pr-notif" checked={data.prefs.notifications} onCheckedChange={toggleNotif} /></Row>
       <Row id="pr-week" title="Semana começa na segunda" desc="Afeta calendário e comparações semanais."><Switch id="pr-week" checked={data.prefs.weekStartsMonday} onCheckedChange={(v) => setP({ weekStartsMonday: v })} /></Row>
-      <Row id="pr-theme" title="Aparência" desc="Tema claro (único disponível nesta versão)."><Switch id="pr-theme" checked disabled /></Row>
+      <div className="py-4"><AppearanceSettings /></div>
       <div className="grid gap-2 pt-2 sm:grid-cols-3">
         <Button variant="outline" className="h-11 rounded-xl" onClick={exportData}><Download className="size-4" />Exportar backup</Button>
         <Button variant="outline" className="h-11 rounded-xl" asChild>

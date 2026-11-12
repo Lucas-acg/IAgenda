@@ -55,20 +55,20 @@ function Compromissos() {
 
   return (
     <div>
-      <PageHeader title="Compromissos" subtitle={todayLabel()} actions={
+      <PageHeader title="Compromissos" subtitle={ready ? todayLabel() : undefined} actions={
         <Button className="hidden h-11 rounded-xl md:inline-flex" onClick={() => open("compromisso")}><Plus className="size-4" />Novo compromisso</Button>
       } />
 
-      <div className="mb-6 grid grid-cols-3 gap-3">
+      {data.prefs.showSummary && <div className="mb-6 grid grid-cols-3 gap-2 sm:gap-3">
         <Stat icon={CalendarCheck2} label="Hoje" value={ready ? String(todayCount) : "–"} sub="compromissos" cls="bg-future/15 text-future" />
         <Stat icon={Droplets} label="Água" value={ready ? `${water}/${data.profile.waterGoal}` : "–"} sub="copos" cls="bg-water/15 text-water" progress={water / Math.max(1, data.profile.waterGoal)} />
         <Stat icon={Bed} label="Último sono" value={lastSleep?.value ? `${lastSleep.value}h` : "–"} sub={lastSleep?.quality ? `qualidade ${lastSleep.quality}` : "sem registro"} cls="bg-sleep/15 text-sleep" />
-      </div>
+      </div>}
 
-      <div role="tablist" aria-label="Filtro" className="mb-5 inline-flex w-full rounded-2xl bg-muted p-1 md:w-auto">
+      <div role="tablist" aria-label="Filtro" className="segmented-control mb-5 inline-flex w-full rounded-2xl bg-muted p-1 md:w-auto">
         {([["ativos", "Ativos"], ["concluidos", "Concluídos"], ["historico", "Histórico"]] as const).map(([k, l]) => (
-          <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
-            className={cn("h-11 flex-1 rounded-xl px-5 text-sm font-semibold transition md:flex-none", tab === k ? "bg-card text-foreground shadow-sm" : "text-muted-foreground")}>{l}</button>
+          <Button variant="ghost" key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
+            className={cn("h-11 min-w-0 flex-1 rounded-xl px-2 text-sm font-semibold transition sm:px-5 md:flex-none", tab === k ? "bg-card text-foreground shadow-sm hover:bg-card" : "text-muted-foreground")}>{l}</Button>
         ))}
       </div>
 
@@ -113,7 +113,7 @@ function Stat({ icon: Icon, label, value, sub, cls, progress }: { icon: typeof B
     <div className="card-soft p-3 md:p-4">
       <div className="flex items-center gap-2">
         <span className={cn("grid size-8 place-items-center rounded-lg", cls)}><Icon className="size-4" aria-hidden /></span>
-        <span className="text-xs font-medium text-muted-foreground md:text-sm">{label}</span>
+        <span className="min-w-0 text-xs font-medium text-muted-foreground md:text-sm">{label}</span>
       </div>
       <p className="mt-2 font-display text-xl font-bold md:text-2xl">{value}</p>
       <p className="truncate text-xs text-muted-foreground">{sub}</p>

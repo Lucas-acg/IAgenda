@@ -21,6 +21,14 @@ export function AppShell({ children }: { children: ReactNode }) {
   const path = useRouterState({ select: (s) => s.location.pathname });
   useReminderNotifications();
   const initials = (data.profile.name || "Você").split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
+  useEffect(() => {
+    if (!ready) return;
+    const root = document.documentElement;
+    root.dataset.palette = data.prefs.palette;
+    root.dataset.density = data.prefs.compact ? "compact" : "comfortable";
+    root.dataset.text = data.prefs.largeText ? "large" : "standard";
+    root.dataset.motion = data.prefs.animations ? "on" : "off";
+  }, [data.prefs, ready]);
 
   return (
     <div className="min-h-dvh md:flex">
@@ -54,7 +62,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </Link>
       </aside>
 
-      <main className="min-w-0 flex-1 px-4 pb-[calc(env(safe-area-inset-bottom)+6.5rem)] pt-[calc(env(safe-area-inset-top)+1.25rem)] md:px-8 md:pb-10 md:pt-8 lg:px-12">
+      <main className="app-content min-w-0 flex-1 px-4 pb-[calc(env(safe-area-inset-bottom)+6.5rem)] pt-[calc(env(safe-area-inset-top)+1.25rem)] md:px-8 md:pb-10 md:pt-8 lg:px-12">
         <div className="mx-auto max-w-6xl">{children}</div>
       </main>
 
@@ -63,10 +71,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="mx-auto grid h-16 max-w-md grid-cols-5 items-center px-1">
           {[NAV[0], NAV[1]].map((n) => <MobileTab key={n.to} {...n} path={path} />)}
           <div className="flex justify-center">
-            <button onClick={() => open()} aria-label="Adicionar registro"
+            <Button size="icon" onClick={() => open()} aria-label="Adicionar registro"
               className="-mt-7 grid size-14 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-[var(--shadow-fab)] transition active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/40">
               <Plus className="size-7" aria-hidden />
-            </button>
+            </Button>
           </div>
           {[NAV[2], NAV[3]].map((n) => <MobileTab key={n.to} {...n} path={path} />)}
         </div>

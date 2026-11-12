@@ -28,3 +28,7 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+## App presentation
+- Keep appearance defaults and validation in `src/lib/appearance.ts`; merge them into existing preferences on load and backup restore to preserve older records.
+- Apply appearance preferences through document data attributes and global semantic tokens so dialogs, charts, navigation, and pages share the same presentation.
