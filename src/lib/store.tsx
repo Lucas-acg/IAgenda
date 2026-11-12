@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { DEFAULT_APPEARANCE, normalizeAppearance, type AppearancePrefs } from "./appearance";
 
 export type Category = "trabalho" | "saude" | "estudos" | "pessoal" | "social" | "outro";
 export type EntryType = "sono" | "alimentacao" | "exercicio" | "agua" | "outro";
@@ -19,7 +20,7 @@ export interface Profile {
   name: string; height: string; weight: string; wake: string; sleep: string;
   waterGoal: number; sleepGoal: number;
 }
-export interface Prefs { notifications: boolean; weekStartsMonday: boolean; compact: boolean; }
+export interface Prefs extends AppearancePrefs { notifications: boolean; weekStartsMonday: boolean; }
 
 export interface AppData {
   appointments: Appointment[]; entries: Entry[]; habits: HabitLog[];
@@ -36,7 +37,7 @@ export const defaultData = (): AppData => ({
   ],
   importantDays: [],
   profile: { name: "", height: "", weight: "", wake: "07:00", sleep: "23:00", waterGoal: 8, sleepGoal: 8 },
-  prefs: { notifications: false, weekStartsMonday: false, compact: false },
+  prefs: { notifications: false, weekStartsMonday: false, ...DEFAULT_APPEARANCE },
 });
 
 export function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); }
@@ -93,7 +94,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (raw) {
         const parsed = JSON.parse(raw) as Partial<AppData>;
         const base = defaultData();
-        setRaw({ ...base, ...parsed, profile: { ...base.profile, ...parsed.profile }, prefs: { ...base.prefs, ...parsed.prefs } });
+        setRaw({ ...base, ...parsed, profile: { ...base.profile, ...parsed.profile }, prefs: { ...base.prefs, ...parsed.prefs, ...normalizeAppearance(parsed.prefs) } });
       }
     } catch { /* dados corrompidos: começa do zero */ }
     setReady(true);

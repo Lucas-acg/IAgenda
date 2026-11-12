@@ -13,20 +13,20 @@ export function AppointmentCard({ a, selected, onSelect }: { a: Appointment; sel
   const st = appointmentStatus(a);
   const { updateAppointment } = useStore();
   return (
-    <div className={cn("card-soft fade-up relative flex items-center gap-3 overflow-hidden p-3 pl-4 transition", selected && "ring-2 ring-primary")}>
+    <div className={cn("appointment-card card-soft fade-up relative flex items-center gap-3 overflow-hidden p-3 pl-4 transition", selected && "ring-2 ring-primary")}>
       <span className={cn("absolute inset-y-0 left-0 w-1.5", STATUS_BAR[st])} aria-hidden />
-      <button onClick={() => { updateAppointment(a.id, { done: !a.done }); toast.success(a.done ? "Marcado como pendente" : "Compromisso concluído"); }}
+      <Button size="icon" variant="ghost" onClick={() => { updateAppointment(a.id, { done: !a.done }); toast.success(a.done ? "Marcado como pendente" : "Compromisso concluído"); }}
         aria-label={a.done ? "Desmarcar conclusão" : "Concluir compromisso"}
         className={cn("grid size-11 shrink-0 place-items-center rounded-full border-2 transition", a.done ? "border-done bg-done text-primary-foreground" : "border-input hover:border-primary")}>
         {a.done && <Check className="size-5" aria-hidden />}
-      </button>
-      <button onClick={onSelect} className="min-w-0 flex-1 rounded-lg py-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+      </Button>
+      <Button variant="ghost" onClick={onSelect} className="block h-auto min-h-11 min-w-0 flex-1 whitespace-normal rounded-lg px-0 py-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring hover:bg-transparent">
         <p className={cn("truncate font-semibold", a.done && "text-muted-foreground line-through")}>{a.title}</p>
-        <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+        <p className="flex flex-wrap items-center gap-x-1.5 text-xs font-normal text-muted-foreground sm:text-sm">
           <Clock className="size-3.5" aria-hidden />{dateLabel(a.date, "EEE, d MMM")} · {a.time}
           <span className="hidden sm:inline">· {CATEGORY_LABEL[a.category]}</span>
         </p>
-      </button>
+      </Button>
       <StatusBadge status={st} />
     </div>
   );
@@ -41,7 +41,7 @@ export function AppointmentDetail({ a, onDeleted }: { a: Appointment; onDeleted?
     <div className="space-y-5">
       <div className="space-y-2">
         <StatusBadge status={st} />
-        <h2 className="font-display text-2xl font-bold">{a.title}</h2>
+        <h2 className="break-words font-display text-2xl font-bold">{a.title}</h2>
         <p className="capitalize text-muted-foreground">{dateLabel(a.date, "EEEE, d 'de' MMMM 'de' yyyy")} · {a.time}</p>
       </div>
       <dl className="grid grid-cols-2 gap-3 text-sm">

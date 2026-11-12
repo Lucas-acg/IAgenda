@@ -45,10 +45,10 @@ export function EmptyState({ icon: Icon, title, text, action }: { icon: LucideIc
 
 export function PageHeader({ title, subtitle, actions }: { title: string; subtitle?: string; actions?: ReactNode }) {
   return (
-    <header className="mb-5 flex items-end justify-between gap-3">
+    <header className="page-header mb-5 flex flex-wrap items-end justify-between gap-3">
       <div className="min-w-0">
         {subtitle && <p className="text-sm text-muted-foreground first-letter:uppercase">{subtitle}</p>}
-        <h1 className="truncate font-display text-2xl font-bold lg:text-3xl">{title}</h1>
+        <h1 className="break-words font-display text-2xl font-bold lg:text-3xl">{title}</h1>
       </div>
       {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
     </header>
