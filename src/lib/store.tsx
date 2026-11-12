@@ -10,7 +10,7 @@ export interface Appointment {
 }
 export interface Entry {
   id: string; type: EntryType; date: string; time: string; note: string;
-  value?: number; quality?: "ruim" | "ok" | "boa";
+  value?: number | undefined; quality?: "ruim" | "ok" | "boa" | undefined;
 }
 export interface HabitLog { id: string; name: string; kind: "recorrente" | "pontual"; date: string; time: string; note: string; }
 export interface DailyReminder { id: string; name: string; time: string; active: boolean; }
@@ -45,13 +45,13 @@ export function toISODate(d: Date) {
   const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, "0"), day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
 }
-export function parseISODate(s: string) { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); }
+export function parseISODate(s: string) { const [y = 1970, m = 1, d = 1] = s.split("-").map(Number); return new Date(y, m - 1, d); }
 export function nowTime() { const d = new Date(); return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; }
 
 /** Status rule: done → concluído; future → futuro; past by up to 24h → atrasado; older → expirado. */
 export function appointmentStatus(a: Pick<Appointment, "date" | "time" | "done">, now = new Date()): AppointmentStatus {
   if (a.done) return "concluido";
-  const [h, m] = (a.time || "23:59").split(":").map(Number);
+  const [h = 23, m = 59] = (a.time || "23:59").split(":").map(Number);
   const when = parseISODate(a.date); when.setHours(h, m, 0, 0);
   const diff = now.getTime() - when.getTime();
   if (diff < 0) return "futuro";

@@ -47,7 +47,7 @@ export function PageHeader({ title, subtitle, actions }: { title: string; subtit
   return (
     <header className="mb-5 flex items-end justify-between gap-3">
       <div className="min-w-0">
-        {subtitle && <p className="text-sm capitalize text-muted-foreground">{subtitle}</p>}
+        {subtitle && <p className="text-sm text-muted-foreground first-letter:uppercase">{subtitle}</p>}
         <h1 className="truncate font-display text-2xl font-bold lg:text-3xl">{title}</h1>
       </div>
       {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
