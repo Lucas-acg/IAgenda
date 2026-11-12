@@ -103,7 +103,7 @@ function useReminderNotifications() {
       };
       data.reminders.filter((r) => r.active && r.time === t).forEach((r) => notify(`r-${r.id}-${today}`, r.name, `Lembrete diário das ${r.time}`));
       data.appointments.filter((a) => !a.done && a.reminder > 0).forEach((a) => {
-        const [h, m] = a.time.split(":").map(Number); const when = parseISODate(a.date); when.setHours(h, m - a.reminder);
+        const [h = 0, m = 0] = a.time.split(":").map(Number); const when = parseISODate(a.date); when.setHours(h, m - a.reminder);
         if (Math.abs(now.getTime() - when.getTime()) < 60_000) notify(`a-${a.id}`, a.title, `Às ${a.time} — ${dateLabel(a.date)}`);
       });
       if (t === "09:00") data.importantDays.filter((d) => d.notify && d.date === today.slice(5)).forEach((d) => notify(`d-${d.id}-${today}`, "Dia importante", d.name));

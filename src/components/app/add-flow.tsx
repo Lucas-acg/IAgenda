@@ -20,7 +20,7 @@ export const useAdd = () => useContext(Ctx);
 const selectCls = "h-11 w-full rounded-xl border border-input bg-card px-3 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 export function AddFlowProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<{ open: boolean; kind: Kind; date?: string; edit?: Appointment }>({ open: false, kind: "menu" });
+  const [state, setState] = useState<{ open: boolean; kind: Kind; date?: string | undefined; edit?: Appointment | undefined }>({ open: false, kind: "menu" });
   const isMobile = useIsMobile();
   const close = () => setState((s) => ({ ...s, open: false }));
   const ctx: AddCtx = { open: (k = "menu", o) => setState({ open: true, kind: k, date: o?.date, edit: o?.edit }) };
@@ -96,7 +96,7 @@ function Field({ id, label, children }: { id: string; label: string; children: R
   return <div className="space-y-1.5"><Label htmlFor={id}>{label}</Label>{children}</div>;
 }
 
-function AppointmentForm({ date, edit, onDone }: { date?: string; edit?: Appointment; onDone: () => void }) {
+function AppointmentForm({ date, edit, onDone }: { date?: string | undefined; edit?: Appointment | undefined; onDone: () => void }) {
   const { addAppointment, updateAppointment } = useStore();
   const [f, setF] = useState({
     title: edit?.title ?? "", date: edit?.date ?? date ?? toISODate(new Date()), time: edit?.time ?? "09:00",
@@ -134,7 +134,7 @@ function AppointmentForm({ date, edit, onDone }: { date?: string; edit?: Appoint
   );
 }
 
-function EntryForm({ date, onDone }: { date?: string; onDone: () => void }) {
+function EntryForm({ date, onDone }: { date?: string | undefined; onDone: () => void }) {
   const { addEntry } = useStore();
   const today = toISODate(new Date());
   const [type, setType] = useState<EntryType>("agua");
@@ -187,7 +187,7 @@ function EntryForm({ date, onDone }: { date?: string; onDone: () => void }) {
 }
 
 const HABIT_SUGGESTIONS = ["Meditar", "Ler", "Estudar", "Tomar remédio", "Caminhar", "Skincare"];
-function HabitForm({ date, onDone }: { date?: string; onDone: () => void }) {
+function HabitForm({ date, onDone }: { date?: string | undefined; onDone: () => void }) {
   const { addHabit, data } = useStore();
   const known = Array.from(new Set([...data.habits.map((h) => h.name), ...HABIT_SUGGESTIONS])).slice(0, 8);
   const [f, setF] = useState({ name: "", kind: "recorrente" as "recorrente" | "pontual", date: date ?? toISODate(new Date()), time: nowTime(), note: "" });
