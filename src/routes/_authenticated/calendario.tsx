@@ -10,7 +10,7 @@ import { ENTRY_DOT } from "@/components/app/shared";
 import { DayRecords } from "@/components/app/day-records";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/calendario")({
+export const Route = createFileRoute("/_authenticated/calendario")({
   head: () => ({
     meta: [
       { title: "Calendário — IAgenda" },

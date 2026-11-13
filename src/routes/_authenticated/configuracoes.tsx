@@ -16,7 +16,7 @@ import { AppearanceSettings } from "@/components/app/appearance-settings";
 import { normalizeAppearance } from "@/lib/appearance";
 import { defaultData } from "@/lib/store";
 
-export const Route = createFileRoute("/configuracoes")({
+export const Route = createFileRoute("/_authenticated/configuracoes")({
   head: () => ({
     meta: [
       { title: "Configurações — IAgenda" },
