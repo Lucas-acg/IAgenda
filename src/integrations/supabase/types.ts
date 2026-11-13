@@ -14,13 +14,285 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      appointments: {
+        Row: {
+          category: string
+          createdAt: string
+          date: string
+          description: string
+          done: boolean
+          id: string
+          reminder: number
+          time: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          createdAt?: string
+          date: string
+          description?: string
+          done?: boolean
+          id: string
+          reminder?: number
+          time: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          createdAt?: string
+          date?: string
+          description?: string
+          done?: boolean
+          id?: string
+          reminder?: number
+          time?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      entries: {
+        Row: {
+          date: string
+          id: string
+          note: string
+          quality: string | null
+          time: string
+          type: string
+          user_id: string
+          value: number | null
+        }
+        Insert: {
+          date: string
+          id: string
+          note?: string
+          quality?: string | null
+          time: string
+          type: string
+          user_id: string
+          value?: number | null
+        }
+        Update: {
+          date?: string
+          id?: string
+          note?: string
+          quality?: string | null
+          time?: string
+          type?: string
+          user_id?: string
+          value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entries_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      habits: {
+        Row: {
+          date: string
+          id: string
+          kind: string
+          name: string
+          note: string
+          time: string
+          user_id: string
+        }
+        Insert: {
+          date: string
+          id: string
+          kind: string
+          name: string
+          note?: string
+          time: string
+          user_id: string
+        }
+        Update: {
+          date?: string
+          id?: string
+          kind?: string
+          name?: string
+          note?: string
+          time?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "habits_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      important_days: {
+        Row: {
+          date: string
+          id: string
+          name: string
+          notify: boolean
+          user_id: string
+        }
+        Insert: {
+          date: string
+          id: string
+          name: string
+          notify?: boolean
+          user_id: string
+        }
+        Update: {
+          date?: string
+          id?: string
+          name?: string
+          notify?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "important_days_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      preferences: {
+        Row: {
+          animations: boolean
+          calendarView: string
+          compact: boolean
+          largeText: boolean
+          notifications: boolean
+          palette: string
+          showSummary: boolean
+          user_id: string
+          weekStartsMonday: boolean
+        }
+        Insert: {
+          animations?: boolean
+          calendarView?: string
+          compact?: boolean
+          largeText?: boolean
+          notifications?: boolean
+          palette?: string
+          showSummary?: boolean
+          user_id: string
+          weekStartsMonday?: boolean
+        }
+        Update: {
+          animations?: boolean
+          calendarView?: string
+          compact?: boolean
+          largeText?: boolean
+          notifications?: boolean
+          palette?: string
+          showSummary?: boolean
+          user_id?: string
+          weekStartsMonday?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          height: string
+          legacy_import_offered: boolean
+          name: string
+          sleep: string
+          sleepGoal: number
+          timezone: string
+          user_id: string
+          wake: string
+          waterGoal: number
+          weight: string
+        }
+        Insert: {
+          height?: string
+          legacy_import_offered?: boolean
+          name?: string
+          sleep?: string
+          sleepGoal?: number
+          timezone?: string
+          user_id: string
+          wake?: string
+          waterGoal?: number
+          weight?: string
+        }
+        Update: {
+          height?: string
+          legacy_import_offered?: boolean
+          name?: string
+          sleep?: string
+          sleepGoal?: number
+          timezone?: string
+          user_id?: string
+          wake?: string
+          waterGoal?: number
+          weight?: string
+        }
+        Relationships: []
+      }
+      reminders: {
+        Row: {
+          active: boolean
+          id: string
+          name: string
+          time: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          id: string
+          name: string
+          time: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          id?: string
+          name?: string
+          time?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reminders_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      save_iagenda_data: { Args: { payload: Json }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

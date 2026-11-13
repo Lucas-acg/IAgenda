@@ -11,7 +11,7 @@ import { DayRecords } from "@/components/app/day-records";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/estatisticas")({
+export const Route = createFileRoute("/_authenticated/estatisticas")({
   head: () => ({
     meta: [
       { title: "Estatísticas — IAgenda" },
