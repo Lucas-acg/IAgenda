@@ -11,9 +11,7 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-import { StoreProvider } from "@/lib/store";
-import { AddFlowProvider } from "@/components/app/add-flow";
-import { AppShell } from "@/components/app/shell";
+import { AuthProvider } from "@/components/app/auth-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
@@ -94,8 +92,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:description", content: "Compromissos, hidratação, sono e alimentação num só lugar." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
-    ],
+          ],
     links: [
       {
         rel: "stylesheet",
@@ -135,14 +132,10 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <StoreProvider>
-        <AddFlowProvider>
-          <AppShell>
-            <Outlet />
-          </AppShell>
-          <Toaster position="top-center" richColors />
-        </AddFlowProvider>
-      </StoreProvider>
+      <AuthProvider>
+        <Outlet />
+        <Toaster position="top-center" richColors />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

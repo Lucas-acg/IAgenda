@@ -43,7 +43,7 @@ export function EmptyState({ icon: Icon, title, text, action }: { icon: LucideIc
   );
 }
 
-export function PageHeader({ title, subtitle, actions }: { title: string; subtitle?: string; actions?: ReactNode }) {
+export function PageHeader({ title, subtitle, actions }: { title: string; subtitle?: string | undefined; actions?: ReactNode }) {
   return (
     <header className="page-header mb-5 flex flex-wrap items-end justify-between gap-3">
       <div className="min-w-0">

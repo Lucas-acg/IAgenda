@@ -18,9 +18,12 @@ export const DEFAULT_APPEARANCE: AppearancePrefs = {
   animations: true, showSummary: true, calendarView: "mes",
 };
 
-export function normalizeAppearance(value: Partial<AppearancePrefs> = {}): AppearancePrefs {
+type LooseAppearance = { [K in keyof AppearancePrefs]?: unknown };
+
+export function normalizeAppearance(value: LooseAppearance = {}): AppearancePrefs {
+  const palette = PALETTES.find((p) => p.value === value.palette)?.value;
   return {
-    palette: PALETTES.some((p) => p.value === value.palette) ? value.palette ?? "menta" : "menta",
+    palette: palette ?? "menta",
     compact: typeof value.compact === "boolean" ? value.compact : false,
     largeText: typeof value.largeText === "boolean" ? value.largeText : false,
     animations: typeof value.animations === "boolean" ? value.animations : true,
