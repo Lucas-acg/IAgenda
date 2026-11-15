@@ -35,7 +35,7 @@ export function DayRecords({ date, showHeader = true }: { date: string; showHead
           <li key={e.id} className="flex items-center gap-3 rounded-2xl border bg-card p-3">
             <IconBubble icon={ENTRY_ICON[e.type]} className={ENTRY_COLOR[e.type]} />
             <div className="min-w-0 flex-1">
-              <p className="truncate font-medium">{ENTRY_LABEL[e.type]}{e.value !== undefined && ` · ${e.value}${e.type === "sono" ? "h" : e.type === "agua" ? " copo(s)" : e.type === "exercicio" ? " min" : ""}`}{e.quality && ` · ${e.quality}`}</p>
+              <p className="truncate font-medium">{ENTRY_LABEL[e.type]}{e.value !== undefined && ` · ${e.type === "sono" ? `${e.value}h` : e.type === "agua" ? `${e.value} copo(s)` : e.type === "exercicio" ? `${Math.floor(e.value / 60)}h ${e.value % 60}min` : e.value}`}{e.quality && ` · ${e.quality}`}</p>
               <p className="truncate text-sm text-muted-foreground">{e.time}{e.note && ` · ${e.note}`}</p>
             </div>
             <Button size="icon" variant="ghost" className="size-11 rounded-xl text-muted-foreground" aria-label="Excluir registro" onClick={() => { removeEntry(e.id); toast.success("Registro excluído"); }}><Trash2 className="size-4" /></Button>

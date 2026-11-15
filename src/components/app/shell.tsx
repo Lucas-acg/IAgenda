@@ -1,6 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useEffect, useRef, type ReactNode } from "react";
-import { BarChart3, CalendarDays, ListChecks, Plus, Settings, CalendarHeart, MessageCircle } from "lucide-react";
+import { BarChart3, CalendarDays, ListChecks, Plus, Settings, CalendarHeart } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ const NAV = [
   { to: "/calendario", label: "Calendário", icon: CalendarDays },
   { to: "/configuracoes", label: "Configurações", icon: Settings },
 ] as const;
-const DESKTOP_NAV = [...NAV.slice(0, 3), { to: "/whatsapp", label: "WhatsApp", icon: MessageCircle } as const, NAV[3]] as const;
+const DESKTOP_NAV = NAV;
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { open } = useAdd();

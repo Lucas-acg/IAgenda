@@ -138,14 +138,16 @@ function EntryForm({ date, onDone }: { date?: string | undefined; onDone: () => 
   const { addEntry } = useStore();
   const today = toISODate(new Date());
   const [type, setType] = useState<EntryType>("agua");
-  const [f, setF] = useState({ date: date && date <= today ? date : today, time: nowTime(), note: "", value: "", quality: "ok" as "ruim" | "ok" | "boa" });
-  useEffect(() => { setF((x) => ({ ...x, value: type === "agua" ? "1" : type === "sono" ? "8" : "" })); }, [type]);
-  const valueLabel = type === "agua" ? "Copos (250 ml)" : type === "sono" ? "Horas dormidas" : type === "exercicio" ? "Minutos" : "";
+  const [f, setF] = useState({ date: date && date <= today ? date : today, time: nowTime(), wake: "07:00", note: "", value: "1", hours: "0", minutes: "30", quality: "ok" as "ruim" | "ok" | "boa" });
+  useEffect(() => { setF((x) => ({ ...x, value: type === "agua" ? "1" : "" })); }, [type]);
   return (
     <form className="space-y-4" onSubmit={(e) => {
       e.preventDefault();
       if (f.date > today) { toast.error("Acontecimentos são do passado. Para o futuro, crie um compromisso."); return; }
-      addEntry({ type, date: f.date, time: f.time, note: f.note, value: f.value ? Number(f.value) : undefined, quality: type === "sono" || type === "alimentacao" ? f.quality : undefined });
+      let value = f.value ? Number(f.value) : undefined;
+      if (type === "sono") { const [sh, sm] = f.time.split(":").map(Number); const [wh, wm] = f.wake.split(":").map(Number); let minutes = wh * 60 + wm - (sh * 60 + sm); if (minutes <= 0) minutes += 24 * 60; value = Math.round((minutes / 60) * 100) / 100; }
+      if (type === "exercicio") value = Number(f.hours) * 60 + Number(f.minutes);
+      addEntry({ type, date: f.date, time: f.time, note: f.note, value, quality: type === "sono" || type === "alimentacao" ? f.quality : undefined });
       toast.success(`${ENTRY_LABEL[type]} registrado`);
       onDone();
     }}>
@@ -168,7 +170,9 @@ function EntryForm({ date, onDone }: { date?: string | undefined; onDone: () => 
         <Field id="en-date" label="Data"><Input id="en-date" type="date" max={today} className="h-11 rounded-xl" value={f.date} onChange={(e) => setF({ ...f, date: e.target.value })} /></Field>
         <Field id="en-time" label={type === "sono" ? "Hora que dormiu" : "Horário"}><Input id="en-time" type="time" className="h-11 rounded-xl" value={f.time} onChange={(e) => setF({ ...f, time: e.target.value })} /></Field>
       </div>
-      {valueLabel && <Field id="en-val" label={valueLabel}><Input id="en-val" type="number" inputMode="decimal" min={0} step={type === "sono" ? 0.5 : 1} className="h-11 rounded-xl" value={f.value} onChange={(e) => setF({ ...f, value: e.target.value })} /></Field>}
+      {type === "agua" && <Field id="en-val" label="Copos (250 ml)"><Input id="en-val" type="number" inputMode="decimal" min={0} step={1} className="h-11 rounded-xl" value={f.value} onChange={(e) => setF({ ...f, value: e.target.value })} /></Field>}
+      {type === "sono" && <Field id="en-wake" label="Horário em que acordou"><Input id="en-wake" type="time" className="h-11 rounded-xl" value={f.wake} onChange={(e) => setF({ ...f, wake: e.target.value })} /></Field>}
+      {type === "exercicio" && <div className="grid grid-cols-2 gap-3"><Field id="en-hours" label="Duração (horas)"><Input id="en-hours" type="number" min={0} max={24} className="h-11 rounded-xl" value={f.hours} onChange={(e) => setF({ ...f, hours: e.target.value })} /></Field><Field id="en-minutes" label="Minutos"><Input id="en-minutes" type="number" min={0} max={59} className="h-11 rounded-xl" value={f.minutes} onChange={(e) => setF({ ...f, minutes: e.target.value })} /></Field></div>}
       {(type === "sono" || type === "alimentacao") && (
         <fieldset>
           <legend className="mb-2 text-sm font-medium">{type === "sono" ? "Qualidade do sono" : "Como foi a refeição"}</legend>

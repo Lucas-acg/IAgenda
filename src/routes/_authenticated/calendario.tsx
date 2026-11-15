@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { addDays, addMonths, addWeeks, endOfMonth, endOfWeek, format, isSameMonth, startOfMonth, startOfWeek } from "date-fns";
+import { addDays, addMonths, addWeeks, endOfMonth, endOfWeek, format, isSameMonth, startOfMonth, startOfWeek, getDaysInMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { recordsOn, toISODate, useStore } from "@/lib/store";
@@ -26,7 +26,7 @@ export const Route = createFileRoute("/_authenticated/calendario")({
 
 function Calendario() {
   const { data } = useStore();
-  const [view, setView] = useState<"mes" | "semana">("mes");
+  const [view, setView] = useState<"mes" | "semana" | "ano">("mes");
   const [cursor, setCursor] = useState(() => new Date());
   const [selected, setSelected] = useState(() => toISODate(new Date()));
   const ws = data.prefs.weekStartsMonday ? 1 : 0;
@@ -36,11 +36,11 @@ function Calendario() {
   const end = view === "mes" ? endOfWeek(endOfMonth(cursor), { weekStartsOn: ws }) : endOfWeek(cursor, { weekStartsOn: ws });
   const days: Date[] = []; for (let d = start; d <= end; d = addDays(d, 1)) days.push(d);
   const weekdays = Array.from({ length: 7 }, (_, i) => format(addDays(start, i), "EEEEEE", { locale: ptBR }));
-  const move = (n: number) => setCursor((c) => (view === "mes" ? addMonths(c, n) : addWeeks(c, n)));
+  const move = (n: number) => setCursor((c) => view === "ano" ? new Date(c.getFullYear() + n, c.getMonth(), 1) : view === "mes" ? addMonths(c, n) : addWeeks(c, n));
 
   return (
     <div>
-      <PageHeader title="Calendário" subtitle={format(cursor, view === "mes" ? "MMMM 'de' yyyy" : "'Semana de' d 'de' MMM", { locale: ptBR })} actions={
+      <PageHeader title="Calendário" subtitle={format(cursor, view === "ano" ? "yyyy" : view === "mes" ? "MMMM 'de' yyyy" : "'Semana de' d 'de' MMM", { locale: ptBR })} actions={
         <Button variant="outline" className="h-11 rounded-xl" onClick={() => { setCursor(new Date()); setSelected(today); }}>Hoje</Button>
       } />
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
@@ -48,18 +48,26 @@ function Calendario() {
           <div className="mb-3 flex items-center justify-between gap-2">
             <Button size="icon" variant="ghost" className="size-11 rounded-xl" aria-label="Anterior" onClick={() => move(-1)}><ChevronLeft className="size-5" /></Button>
             <div role="tablist" aria-label="Visualização" className="inline-flex rounded-xl bg-muted p-1">
-              {(["mes", "semana"] as const).map((v) => (
-                <button key={v} role="tab" aria-selected={view === v} onClick={() => setView(v)} className={cn("h-10 rounded-lg px-4 text-sm font-semibold", view === v ? "bg-card shadow-sm" : "text-muted-foreground")}>{v === "mes" ? "Mês" : "Semana"}</button>
+              {(["mes", "semana", "ano"] as const).map((v) => (
+                <button key={v} role="tab" aria-selected={view === v} onClick={() => setView(v)} className={cn("h-10 rounded-lg px-3 text-sm font-semibold", view === v ? "bg-card shadow-sm" : "text-muted-foreground")}>{v === "mes" ? "Mês" : v === "ano" ? "Ano" : "Semana"}</button>
               ))}
             </div>
             <Button size="icon" variant="ghost" className="size-11 rounded-xl" aria-label="Próximo" onClick={() => move(1)}><ChevronRight className="size-5" /></Button>
           </div>
+          {view === "ano" ? <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+            {Array.from({ length: 12 }, (_, month) => {
+              const monthDate = new Date(cursor.getFullYear(), month, 1);
+              const first = startOfWeek(monthDate, { weekStartsOn: ws });
+              const cells = Array.from({ length: Math.ceil((monthDate.getDay() - ws + getDaysInMonth(monthDate)) / 7) * 7 }, (_, i) => addDays(first, i));
+              return <section key={month} className="rounded-2xl border p-3"><button className="mb-2 font-semibold capitalize text-primary" onClick={() => { setCursor(monthDate); setView("mes"); }}>{format(monthDate, "MMMM", { locale: ptBR })}</button><div className="grid grid-cols-7 text-center text-[10px] text-muted-foreground">{["D","S","T","Q","Q","S","S"].map((d,i)=><span key={i}>{d}</span>)}</div><div className="grid grid-cols-7 text-center text-xs">{cells.map((d,i)=>{ const iso=toISODate(d); const important=data.importantDays.some(x=>x.date===iso.slice(5)); return <button key={i} onClick={()=>{setSelected(iso);setCursor(monthDate)}} aria-label={`${iso}${important?", data importante":""}`} className={cn("m-0.5 grid aspect-square place-items-center rounded-full", !isSameMonth(d,monthDate)&&"opacity-25", iso===today&&"bg-primary text-primary-foreground", important&&"ring-2 ring-accent")}>{d.getDate()}</button>; })}</div></section>;
+            })}
+          </div> : <>
           <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold uppercase text-muted-foreground">
             {weekdays.map((w, i) => <div key={i} className="py-2">{w}</div>)}
           </div>
           <div className="grid grid-cols-7 gap-1">
             {days.map((d) => {
-              const iso = toISODate(d); const r = recordsOn(data, iso);
+              const iso = toISODate(d); const r = recordsOn(data, iso); const important = data.importantDays.filter((x) => x.date === iso.slice(5));
               const inMonth = view === "semana" || isSameMonth(d, cursor);
               return (
                 <button key={iso} onClick={() => setSelected(iso)} aria-pressed={selected === iso}
@@ -72,6 +80,7 @@ function Calendario() {
                     {r.appointments.length > 0 && <span className="size-1.5 rounded-full bg-future md:size-2" />}
                     {r.entries.slice(0, 3).map((e) => <span key={e.id} className={cn("size-1.5 rounded-full md:size-2", ENTRY_DOT[e.type])} />)}
                     {r.habits.length > 0 && <span className="size-1.5 rounded-full bg-habit md:size-2" />}
+                  {important.length > 0 && <span className="size-1.5 rounded-full bg-accent-foreground md:size-2" title={important.map((x) => x.name).join(", ")} />}
                   </span>
                   {view === "semana" && <span className="hidden w-full space-y-0.5 text-left md:block">
                     {r.appointments.slice(0, 3).map((a) => <span key={a.id} className="block truncate rounded bg-future/15 px-1 text-xs text-future">{a.time} {a.title}</span>)}
@@ -80,6 +89,7 @@ function Calendario() {
               );
             })}
           </div>
+          </>}
           <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
             {[["bg-future", "Compromisso"], ["bg-water", "Água"], ["bg-sleep", "Sono"], ["bg-food", "Alimentação"], ["bg-exercise", "Exercício"], ["bg-habit", "Hábito"]].map(([c, l]) => (
               <span key={l} className="flex items-center gap-1.5"><span className={cn("size-2 rounded-full", c)} />{l}</span>
