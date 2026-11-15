@@ -74,7 +74,7 @@ function Calendario() {
                   aria-label={`${format(d, "d 'de' MMMM", { locale: ptBR })}: ${r.appointments.length + r.entries.length + r.habits.length} registros`}
                   className={cn("flex flex-col items-center gap-1 rounded-xl p-1 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                     view === "mes" ? "min-h-12 md:min-h-20 md:items-start md:p-2" : "min-h-20 md:min-h-32 md:items-start md:p-2",
-                    selected === iso ? "bg-primary-soft ring-2 ring-primary" : "hover:bg-muted", !inMonth && "opacity-40")}>
+                    selected === iso ? "bg-primary-soft ring-2 ring-primary" : important.length > 0 ? "bg-accent/40 hover:bg-accent/60" : "hover:bg-muted", !inMonth && "opacity-40")}>
                   <span className={cn("grid size-7 place-items-center rounded-full text-sm font-semibold", iso === today && "bg-primary text-primary-foreground")}>{format(d, "d")}</span>
                   <span className="flex flex-wrap justify-center gap-0.5 md:justify-start">
                     {r.appointments.length > 0 && <span className="size-1.5 rounded-full bg-future md:size-2" />}
@@ -82,6 +82,7 @@ function Calendario() {
                     {r.habits.length > 0 && <span className="size-1.5 rounded-full bg-habit md:size-2" />}
                   {important.length > 0 && <span className="size-1.5 rounded-full bg-accent-foreground md:size-2" title={important.map((x) => x.name).join(", ")} />}
                   </span>
+                  {important.length > 0 && <span className="hidden w-full truncate rounded bg-accent px-1 text-left text-[11px] font-medium text-accent-foreground md:block">{important[0]?.name}{important.length > 1 ? ` +${important.length - 1}` : ""}</span>}
                   {view === "semana" && <span className="hidden w-full space-y-0.5 text-left md:block">
                     {r.appointments.slice(0, 3).map((a) => <span key={a.id} className="block truncate rounded bg-future/15 px-1 text-xs text-future">{a.time} {a.title}</span>)}
                   </span>}
@@ -91,12 +92,14 @@ function Calendario() {
           </div>
           </>}
           <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-            {[["bg-future", "Compromisso"], ["bg-water", "Água"], ["bg-sleep", "Sono"], ["bg-food", "Alimentação"], ["bg-exercise", "Exercício"], ["bg-habit", "Hábito"]].map(([c, l]) => (
+            {[["bg-future", "Compromisso"], ["bg-water", "Água"], ["bg-sleep", "Sono"], ["bg-food", "Alimentação"], ["bg-exercise", "Exercício"], ["bg-habit", "Hábito"], ["bg-accent-foreground", "Dia importante"]].map(([c, l]) => (
               <span key={l} className="flex items-center gap-1.5"><span className={cn("size-2 rounded-full", c)} />{l}</span>
             ))}
           </div>
         </div>
-        <div className="lg:card-soft lg:p-5"><DayRecords date={selected} /></div>
+        <div className="lg:card-soft lg:p-5">
+          {data.importantDays.filter((x) => x.date === selected.slice(5)).map((x) => <p key={x.id} className="mb-3 rounded-2xl bg-accent px-4 py-3 text-sm font-semibold text-accent-foreground">🎉 {x.name}</p>)}
+          <DayRecords date={selected} /></div>
       </div>
     </div>
   );

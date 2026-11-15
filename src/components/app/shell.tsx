@@ -4,6 +4,7 @@ import { BarChart3, CalendarDays, ListChecks, Plus, Settings, CalendarHeart } fr
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { useAdd } from "./add-flow";
 import { nowTime, parseISODate, toISODate, useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -98,25 +99,46 @@ function MobileTab({ to, label, icon: Icon, path }: { to: (typeof NAV)[number]["
 export function todayLabel() { return format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR }); }
 export function dateLabel(iso: string, f = "d 'de' MMM") { return format(parseISODate(iso), f, { locale: ptBR }); }
 
-/** Fires browser notifications for appointments, daily reminders and important days while the app is open. */
+const FIRED_KEY = "iagenda:notified";
+function loadFired(): Set<string> { try { return new Set(JSON.parse(localStorage.getItem(FIRED_KEY) || "[]") as string[]); } catch { return new Set(); } }
+
+/** Shows a system notification (via service worker when available, required on Android) plus an in-app toast. */
+async function showNotice(title: string, body: string) {
+  toast(title, { description: body, duration: 15000 });
+  if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+  try {
+    const reg = "serviceWorker" in navigator ? await navigator.serviceWorker.getRegistration() : undefined;
+    if (reg) { await reg.showNotification(title, { body, icon: "/icon-512.png" }); return; }
+    new Notification(title, { body, icon: "/icon-512.png" });
+  } catch { /* toast already shown */ }
+}
+
+/** Fires reminders for appointments, daily reminders and important days while the app is open. */
 function useReminderNotifications() {
-  const { data } = useStore();
-  const fired = useRef(new Set<string>());
+  const { data, ready } = useStore();
+  const fired = useRef<Set<string> | null>(null);
   useEffect(() => {
-    if (!data.prefs.notifications || typeof Notification === "undefined" || Notification.permission !== "granted") return;
+    if (!ready || !data.prefs.notifications) return;
+    fired.current ??= loadFired();
     const tick = () => {
-      const now = new Date(); const today = toISODate(now); const t = nowTime();
+      const set = fired.current!; const now = new Date(); const today = toISODate(now); const t = nowTime();
       const notify = (key: string, title: string, body: string) => {
-        if (fired.current.has(key)) return; fired.current.add(key);
-        try { new Notification(title, { body, icon: "/icon-512.png" }); } catch { /* alguns navegadores exigem service worker */ }
+        if (set.has(key)) return; set.add(key);
+        try { localStorage.setItem(FIRED_KEY, JSON.stringify([...set].slice(-300))); } catch { /* ignore */ }
+        void showNotice(title, body);
       };
-      data.reminders.filter((r) => r.active && r.time === t).forEach((r) => notify(`r-${r.id}-${today}`, r.name, `Lembrete diário das ${r.time}`));
-      data.appointments.filter((a) => !a.done && a.reminder > 0).forEach((a) => {
-        const [h = 0, m = 0] = a.time.split(":").map(Number); const when = parseISODate(a.date); when.setHours(h, m - a.reminder);
-        if (Math.abs(now.getTime() - when.getTime()) < 60_000) notify(`a-${a.id}`, a.title, `Às ${a.time} — ${dateLabel(a.date)}`);
+      const due = (when: Date) => { const diff = now.getTime() - when.getTime(); return diff >= 0 && diff < 10 * 60_000; };
+      data.reminders.filter((r) => r.active).forEach((r) => {
+        const [h = 0, m = 0] = r.time.split(":").map(Number); const when = new Date(now); when.setHours(h, m, 0, 0);
+        if (due(when)) notify(`r-${r.id}-${today}`, r.name, `Lembrete diário das ${r.time}`);
       });
-      if (t === "09:00") data.importantDays.filter((d) => d.notify && d.date === today.slice(5)).forEach((d) => notify(`d-${d.id}-${today}`, "Dia importante", d.name));
+      data.appointments.filter((a) => !a.done).forEach((a) => {
+        const [h = 0, m = 0] = a.time.split(":").map(Number); const start = parseISODate(a.date); start.setHours(h, m, 0, 0);
+        if (a.reminder > 0) { const before = new Date(start.getTime() - a.reminder * 60_000); if (due(before)) notify(`a-${a.id}-pre`, a.title, `Começa às ${a.time} — ${dateLabel(a.date)}`); }
+        if (due(start)) notify(`a-${a.id}`, a.title, `Agora, às ${a.time}`);
+      });
+      if (t >= "08:00") data.importantDays.filter((d) => d.notify && d.date === today.slice(5)).forEach((d) => notify(`d-${d.id}-${today}`, "Dia importante hoje", d.name));
     };
-    tick(); const id = setInterval(tick, 30_000); return () => clearInterval(id);
-  }, [data]);
+    tick(); const id = setInterval(tick, 20_000); return () => clearInterval(id);
+  }, [data, ready]);
 }
