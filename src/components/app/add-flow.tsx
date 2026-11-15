@@ -145,7 +145,7 @@ function EntryForm({ date, onDone }: { date?: string | undefined; onDone: () => 
       e.preventDefault();
       if (f.date > today) { toast.error("Acontecimentos são do passado. Para o futuro, crie um compromisso."); return; }
       let value = f.value ? Number(f.value) : undefined;
-      if (type === "sono") { const [sh, sm] = f.time.split(":").map(Number); const [wh, wm] = f.wake.split(":").map(Number); let minutes = wh * 60 + wm - (sh * 60 + sm); if (minutes <= 0) minutes += 24 * 60; value = Math.round((minutes / 60) * 100) / 100; }
+      if (type === "sono") { const [sh = 0, sm = 0] = f.time.split(":").map(Number); const [wh = 0, wm = 0] = f.wake.split(":").map(Number); let minutes = wh * 60 + wm - (sh * 60 + sm); if (minutes <= 0) minutes += 24 * 60; value = Math.round((minutes / 60) * 100) / 100; }
       if (type === "exercicio") value = Number(f.hours) * 60 + Number(f.minutes);
       addEntry({ type, date: f.date, time: f.time, note: f.note, value, quality: type === "sono" || type === "alimentacao" ? f.quality : undefined });
       toast.success(`${ENTRY_LABEL[type]} registrado`);
