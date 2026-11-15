@@ -1,6 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useEffect, useRef, type ReactNode } from "react";
-import { BarChart3, CalendarDays, ListChecks, Plus, Settings, CalendarHeart } from "lucide-react";
+import { BarChart3, CalendarDays, ListChecks, Plus, Settings, CalendarHeart, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ const NAV = [
   { to: "/calendario", label: "Calendário", icon: CalendarDays },
   { to: "/configuracoes", label: "Configurações", icon: Settings },
 ] as const;
+const DESKTOP_NAV = [...NAV.slice(0, 3), { to: "/whatsapp", label: "WhatsApp", icon: MessageCircle } as const, NAV[3]] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { open } = useAdd();
@@ -24,10 +25,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!ready) return;
     const root = document.documentElement;
-    root.dataset.palette = data.prefs.palette;
-    root.dataset.density = data.prefs.compact ? "compact" : "comfortable";
-    root.dataset.text = data.prefs.largeText ? "large" : "standard";
-    root.dataset.motion = data.prefs.animations ? "on" : "off";
+    root.dataset["palette"] = data.prefs.palette;
+    root.dataset["density"] = data.prefs.compact ? "compact" : "comfortable";
+    root.dataset["text"] = data.prefs.largeText ? "large" : "standard";
+    root.dataset["motion"] = data.prefs.animations ? "on" : "off";
   }, [data.prefs, ready]);
 
   return (
@@ -42,7 +43,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Plus className="size-5" /> <span className="hidden lg:inline">Adicionar</span>
         </Button>
         <nav className="flex flex-1 flex-col gap-1" aria-label="Principal">
-          {NAV.map((n) => {
+          {DESKTOP_NAV.map((n) => {
             const active = n.to === "/" ? path === "/" : path.startsWith(n.to);
             return (
               <Link key={n.to} to={n.to} title={n.label}

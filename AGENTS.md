@@ -32,3 +32,8 @@ use the editor.
 ## App presentation
 - Keep appearance defaults and validation in `src/lib/appearance.ts`; merge them into existing preferences on load and backup restore to preserve older records.
 - Apply appearance preferences through document data attributes and global semantic tokens so dialogs, charts, navigation, and pages share the same presentation.
+
+## Data and integrations
+- `StoreProvider` lives only inside the `_authenticated` layout and syncs to the cloud through `src/lib/cloud-store.ts`; the root route only mounts `AuthProvider`, so public pages never load user data.
+- WhatsApp: the signed receiver is `POST /api/public/whatsapp/webhook`; every delivery is stored in `whatsapp_webhook_events` before processing, and AI-created appointments use the deterministic id `wa-<message id>` so retries never duplicate them.
+- Keep AI extraction rules (what counts as an appointment) in `src/lib/whatsapp/extract.ts` with tests in `src/test/whatsapp-extract.test.ts`.

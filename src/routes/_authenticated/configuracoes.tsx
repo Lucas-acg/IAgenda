@@ -1,4 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { LogOut, MessageCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { useState, type ReactNode } from "react";
 import { User, CalendarRange, CalendarDays, Cake, BellRing, SlidersHorizontal, ChevronRight, ChevronLeft, Plus, Trash2, Download, Upload } from "lucide-react";
 import { addDays, format, startOfMonth, startOfWeek, endOfMonth } from "date-fns";
@@ -40,6 +42,20 @@ const SECTIONS = [
 ] as const;
 type Key = (typeof SECTIONS)[number]["k"];
 
+function AccountActions() {
+  const navigate = useNavigate();
+  return (
+    <div className="grid gap-2 sm:flex">
+      <Button asChild variant="outline" className="h-11 rounded-xl"><Link to="/whatsapp"><MessageCircle className="size-4" />Integração com WhatsApp</Link></Button>
+      <Button variant="ghost" className="h-11 rounded-xl text-destructive" onClick={async () => {
+        const { error } = await supabase.auth.signOut();
+        if (error) { toast.error("Não foi possível sair. Tente novamente."); return; }
+        await navigate({ to: "/auth", replace: true });
+      }}><LogOut className="size-4" />Sair</Button>
+    </div>
+  );
+}
+
 function Configuracoes() {
   const [active, setActive] = useState<Key>("perfil");
   const [mobileOpen, setMobileOpen] = useState<Key | null>(null);
@@ -66,12 +82,13 @@ function Configuracoes() {
                 </Button></li>
               ))}
             </ul>
+            <div className="mt-5"><AccountActions /></div>
           </>
         )}
       </div>
       {/* Desktop: internal side menu */}
       <div className="hidden md:block">
-        <PageHeader title="Configurações" subtitle="Personalize o IAgenda" />
+        <PageHeader title="Configurações" subtitle="Personalize o IAgenda" actions={<AccountActions />} />
         <div className="grid grid-cols-[180px_minmax(0,1fr)] gap-5 xl:grid-cols-[230px_minmax(0,1fr)]">
           <nav aria-label="Seções" className="space-y-1">
             {SECTIONS.map((s) => (
