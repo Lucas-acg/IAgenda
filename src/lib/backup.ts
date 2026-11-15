@@ -8,7 +8,7 @@ const id = z.string().min(1).max(200);
 const text = z.string().max(10000);
 const record = { id, date, time };
 const schema = z.object({
-  appointments: z.array(z.object({ ...record, title: text.min(1), description: text, category: z.enum(["trabalho","saude","estudos","pessoal","social","outro"]), reminder: z.number().int().nonnegative(), done: z.boolean(), createdAt: z.string().datetime() })),
+  appointments: z.array(z.object({ ...record, title: text.min(1), description: text, category: z.enum(["trabalho","saude","estudos","pessoal","social","outro"]), reminder: z.number().int().nonnegative(), done: z.boolean(), createdAt: z.string().datetime({ offset: true }) })),
   entries: z.array(z.object({ ...record, type: z.enum(["sono","alimentacao","exercicio","agua","outro"]), note: text, value: z.number().finite().optional(), quality: z.enum(["ruim","ok","boa"]).optional() })),
   habits: z.array(z.object({ ...record, name: text.min(1), kind: z.enum(["recorrente","pontual"]), note: text })),
   reminders: z.array(z.object({ id, name: text.min(1), time, active: z.boolean() })),

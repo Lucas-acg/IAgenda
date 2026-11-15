@@ -1,5 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { LogOut, MessageCircle } from "lucide-react";
+import { LogOut, MessageCircle, UserX } from "lucide-react";
+import { deleteMyAccount } from "@/lib/account.functions";
+import { validateBackup } from "@/lib/backup";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, type ReactNode } from "react";
 import { User, CalendarRange, CalendarDays, Cake, BellRing, SlidersHorizontal, ChevronRight, ChevronLeft, Plus, Trash2, Download, Upload } from "lucide-react";
@@ -39,6 +41,8 @@ const SECTIONS = [
   { k: "dias", l: "Dias importantes", d: "Aniversários e datas anuais", icon: Cake },
   { k: "lembretes", l: "Eventos diários e lembretes", d: "Água, estudo, remédios…", icon: BellRing },
   { k: "preferencias", l: "Preferências", d: "Notificações, aparência e dados", icon: SlidersHorizontal },
+  { k: "whatsapp", l: "WhatsApp", d: "Compromissos a partir das conversas", icon: MessageCircle },
+  { k: "conta", l: "Conta", d: "Sair ou excluir sua conta", icon: UserX },
 ] as const;
 type Key = (typeof SECTIONS)[number]["k"];
 
@@ -46,12 +50,32 @@ function AccountActions() {
   const navigate = useNavigate();
   return (
     <div className="grid gap-2 sm:flex">
-      <Button asChild variant="outline" className="h-11 rounded-xl"><Link to="/whatsapp"><MessageCircle className="size-4" />Integração com WhatsApp</Link></Button>
       <Button variant="ghost" className="h-11 rounded-xl text-destructive" onClick={async () => {
         const { error } = await supabase.auth.signOut();
         if (error) { toast.error("Não foi possível sair. Tente novamente."); return; }
         await navigate({ to: "/auth", replace: true });
       }}><LogOut className="size-4" />Sair</Button>
+    </div>
+  );
+}
+
+function DeleteAccount() {
+  const navigate = useNavigate();
+  const [busy, setBusy] = useState(false);
+  return (
+    <div className="space-y-3">
+      <p className="text-sm text-muted-foreground">Excluir a conta apaga para sempre seus compromissos, registros e preferências. Faça um backup antes, se quiser guardar algo.</p>
+      <AlertDialog>
+        <AlertDialogTrigger asChild><Button variant="outline" disabled={busy} className="h-11 rounded-xl text-destructive hover:text-destructive"><UserX className="size-4" />{busy ? "Excluindo…" : "Excluir minha conta"}</Button></AlertDialogTrigger>
+        <AlertDialogContent className="rounded-3xl">
+          <AlertDialogHeader><AlertDialogTitle>Excluir sua conta?</AlertDialogTitle><AlertDialogDescription>Esta ação não pode ser desfeita. Todos os seus dados serão apagados.</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel className="h-11 rounded-xl">Cancelar</AlertDialogCancel><AlertDialogAction className="h-11 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={async () => {
+            setBusy(true);
+            try { await deleteMyAccount(); await supabase.auth.signOut(); toast.success("Conta excluída"); await navigate({ to: "/auth", replace: true }); }
+            catch { toast.error("Não foi possível excluir a conta. Tente novamente."); setBusy(false); }
+          }}>Excluir conta</AlertDialogAction></AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -115,6 +139,8 @@ function SectionBody({ k }: { k: Key }) {
   if (k === "mensal") return <Report kind="mensal" />;
   if (k === "dias") return <ImportantDays />;
   if (k === "lembretes") return <Reminders />;
+  if (k === "whatsapp") return <div className="space-y-3"><p className="text-sm text-muted-foreground">Escolha quais conversas a IA verifica para criar compromissos automaticamente.</p><Button asChild className="h-11 rounded-xl"><Link to="/whatsapp"><MessageCircle className="size-4" />Abrir integração com WhatsApp</Link></Button></div>;
+  if (k === "conta") return <DeleteAccount />;
   return <Preferences />;
 }
 
@@ -267,7 +293,7 @@ function Preferences() {
     const url = URL.createObjectURL(blob); const a = document.createElement("a");
     a.href = url; a.download = `iagenda-backup-${toISODate(new Date())}.json`; a.click(); URL.revokeObjectURL(url);
   };
-  const importData = (file: File) => file.text().then((t) => { try { const parsed = JSON.parse(t) as Partial<AppData>; if (!Array.isArray(parsed.appointments) || !Array.isArray(parsed.entries) || !Array.isArray(parsed.habits) || !Array.isArray(parsed.reminders) || !Array.isArray(parsed.importantDays)) throw new Error(); const base = defaultData(); setData(() => ({ ...base, ...parsed, profile: { ...base.profile, ...parsed.profile }, prefs: { ...base.prefs, ...parsed.prefs, ...normalizeAppearance(parsed.prefs) } })); toast.success("Backup restaurado"); } catch { toast.error("Arquivo de backup inválido."); } });
+  const importData = (file: File) => file.text().then((t) => { try { const parsed = JSON.parse(t) as Partial<AppData>; const base = defaultData(); const restored = validateBackup({ ...base, ...parsed, profile: { ...base.profile, ...parsed.profile }, prefs: { ...base.prefs, ...parsed.prefs, ...normalizeAppearance(parsed.prefs) } }); setData(() => restored); toast.success("Backup restaurado"); } catch { toast.error("Arquivo de backup inválido."); } });
   const Row = ({ id, title, desc, children }: { id: string; title: string; desc: string; children: ReactNode }) => (
     <div className="flex items-center justify-between gap-4 border-b py-4"><div className="min-w-0"><Label htmlFor={id} className="font-semibold">{title}</Label><p className="text-sm text-muted-foreground">{desc}</p></div><div className="shrink-0">{children}</div></div>
   );
@@ -284,12 +310,12 @@ function Preferences() {
         <AlertDialog>
           <AlertDialogTrigger asChild><Button variant="outline" className="h-11 rounded-xl text-destructive hover:text-destructive"><Trash2 className="size-4" />Apagar tudo</Button></AlertDialogTrigger>
           <AlertDialogContent className="rounded-3xl">
-            <AlertDialogHeader><AlertDialogTitle>Apagar todos os dados?</AlertDialogTitle><AlertDialogDescription>Compromissos, registros e configurações deste aparelho serão removidos. Faça um backup antes.</AlertDialogDescription></AlertDialogHeader>
+            <AlertDialogHeader><AlertDialogTitle>Apagar todos os dados?</AlertDialogTitle><AlertDialogDescription>Compromissos, registros e configurações da sua conta serão removidos. Faça um backup antes.</AlertDialogDescription></AlertDialogHeader>
             <AlertDialogFooter><AlertDialogCancel className="h-11 rounded-xl">Cancelar</AlertDialogCancel><AlertDialogAction className="h-11 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => { resetAll(); toast.success("Dados apagados"); }}>Apagar</AlertDialogAction></AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
       </div>
-      <p className="pt-2 text-xs text-muted-foreground">Seus dados ficam guardados apenas neste aparelho/navegador.</p>
+      <p className="pt-2 text-xs text-muted-foreground">Seus dados ficam guardados na sua conta e aparecem em qualquer aparelho em que você entrar.</p>
     </div>
   );
 }
