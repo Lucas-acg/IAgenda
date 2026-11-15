@@ -137,7 +137,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         });
       }
     }).catch(() => {
-      if (active) { toast.error("Não foi possível carregar seus dados. Tente recarregar a página."); }
+      if (active) { console.error("IAgenda: falha ao carregar dados"); toast.error("Não foi possível carregar seus dados. Tente recarregar a página."); }
     });
     return () => { active = false; };
   }, [userId]);
@@ -148,7 +148,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const t = setTimeout(() => {
       saveCloudData(data).then(() => { dirty.current = false; }).catch(() => toast.error("Não foi possível salvar. Suas últimas alterações podem não ter sido gravadas."));
     }, 600);
-    return () => clearTimeout(t);
+    const flush = () => { if (dirty.current) void saveCloudData(data).then(() => { dirty.current = false; }).catch(() => {}); };
+    const onHide = () => { if (document.visibilityState === "hidden") flush(); };
+    window.addEventListener("pagehide", flush); document.addEventListener("visibilitychange", onHide);
+    return () => { clearTimeout(t); window.removeEventListener("pagehide", flush); document.removeEventListener("visibilitychange", onHide); };
   }, [data, ready, userId]);
 
   const update = useCallback((fn: (d: AppData) => AppData) => { dirty.current = true; setRaw(fn); }, []);
