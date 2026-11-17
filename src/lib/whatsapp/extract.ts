@@ -22,14 +22,14 @@ export function localNow(timezone: string, at = new Date()) {
 
 /** Accepts an AI answer only when it is a real appointment with a valid date and a specific time. */
 export function toAppointment(x: Extraction): { title: string; date: string; time: string; category: (typeof CATEGORIES)[number]; description: string } | null {
-  if (!x.is_appointment || !x.title?.trim() || !x.date || !x.time) return null;
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(x.date) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(x.time)) return null;
+  if (!x.is_appointment || !x.title?.trim() || !x.date) return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(x.date) || (x.time !== null && !/^([01]\d|2[0-3]):[0-5]\d$/.test(x.time))) return null;
   const d = new Date(x.date + "T12:00:00Z");
   if (Number.isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== x.date) return null;
   return {
     title: x.title.trim().slice(0, 200),
     date: x.date,
-    time: x.time,
+    time: x.time ?? "",
     category: x.category && CATEGORIES.includes(x.category) ? x.category : "outro",
     description: (x.description ?? "").slice(0, 2000),
   };
