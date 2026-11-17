@@ -8,13 +8,12 @@
 - [x] Oferecer importação antiga uma vez, validar backups e restringir exclusões ao usuário.
 
 # Integração com WhatsApp
-- [ ] Substituir conexão individual por assistente em número oficial compartilhado.
-- [ ] Vincular telefone por código temporário; isolar usuários e evitar duplicações.
-- [ ] Claude Haiku 4.5 integrado ao Lovable, esclarecimentos e confirmação pelo WhatsApp.
-- [ ] Reformular WhatsApp: vínculo, número oficial, iniciar conversa, editar/excluir detectados.
-- [ ] Manual completo e testes reais de dois usuários (dependem da Meta e credenciais).
-- [x] Aba WhatsApp: escolher conversas verificadas e ver compromissos criados pela IA.
-- [x] Receptor oficial de webhooks com caixa de entrada durável e recuperação.
-- [x] IA real (Lovable AI) que cria compromissos com data e hora.
-- [ ] Aplicar `docs/whatsapp-setup.sql` pelo Lovable (tabelas novas).
-- [ ] Conectar o WhatsApp Business no Lovable e escolher este projeto em "Incoming messages".
+- [x] Substituir conexão individual por estrutura de assistente em número oficial compartilhado.
+- [x] Vincular telefone por código temporário e proteger dados privados no servidor.
+- [x] Claude Haiku 4.5 integrado: chamada real de extração verificada.
+- [x] Reformular WhatsApp: vínculo, número oficial, iniciar conversa e detalhes reutilizando edição/exclusão.
+- [x] Manual completo com uso, configuração, limites e roteiro de aceitação.
+- [x] Aplicar armazenamento do assistente e proteção contra duplicação.
+- [ ] Conectar número oficial e selecionar Incoming messages (conexão recusada; número não fornecido).
+- [ ] Verificar vínculo, resposta, edição e isolamento real de dois usuários (faltam conexão Meta e sessões autorizadas).
+- [ ] Recuperação durável sem tráfego e retomada administrativa (agendamento suportado não disponível nas ferramentas desta sessão).

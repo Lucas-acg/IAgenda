@@ -44,7 +44,7 @@ function WhatsappPage() {
     {(status.isError || detected.isError) && <p role="alert" className="text-destructive">Não foi possível carregar. Tente atualizar.</p>}
     <section className="mb-7 border-b pb-6" aria-labelledby="wa-status">
       <h2 id="wa-status" className="mb-3 font-display text-lg font-semibold">Assistente</h2>
-      <p className="mb-2 font-medium">{s?.configured ? "Disponível" : "Aguardando ativação"}</p>
+      <p className="mb-2 font-medium">{s?.paused ? "Temporariamente indisponível" : s?.configured ? "Disponível" : "Aguardando ativação"}</p>
       <p className="mb-4 text-muted-foreground">Número oficial: {s?.officialNumber ? `+${s.officialNumber}` : "Ainda não configurado"}</p>
       {s?.officialNumber && <Button asChild disabled={!s.configured} className="h-11 rounded-xl"><a href={`https://wa.me/${s.officialNumber}`} target="_blank" rel="noreferrer"><MessageCircle className="size-4" />Iniciar conversa</a></Button>}
     </section>
