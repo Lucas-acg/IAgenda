@@ -11,6 +11,8 @@ export async function getAdmin(): Promise<Db> {
   return supabaseAdmin;
 }
 type MetaValue = {
+  event?: string;
+  ban_info?: { waba_ban_state?: string };
   metadata?: { phone_number_id?: string };
   messages?: { id: string; from: string; timestamp: string; type?: string; text?: { body?: string } }[];
   statuses?: { id: string; status: string; timestamp: string; errors?: unknown[] }[];
@@ -31,6 +33,9 @@ async function saveReply(db: Db, id: string, phone: string, body: string) {
 async function sendReply(db: Db, id: string) {
   const apiKey = process.env["WHATSAPP_API_KEY"], lovableKey = process.env["LOVABLE_API_KEY"];
   if (!apiKey || !lovableKey) throw new Error("Número oficial não configurado.");
+  const { data: control, error: controlError } = await db.from("wa_processing_control").select("paused_reason").eq("id", 1).maybeSingle();
+  if (controlError) throw controlError;
+  if (control?.paused_reason) return;
   const { data: rows, error } = await db.from("wa_replies").update({ state: "sending" }).eq("inbound_id", id).eq("state", "pending").select("*");
   if (error) throw error;
   const reply = rows?.[0]; if (!reply) return;
@@ -45,11 +50,11 @@ async function sendReply(db: Db, id: string) {
     if (updateError) throw updateError;
     return;
   }
-  const result = await response.json() as { messages?: { id?: string }[]; error?: { message?: string; code?: number } };
-  const providerId = result.messages?.[0]?.id;
+  const result = await response.json().catch(() => null) as { messages?: { id?: string }[]; error?: { message?: string; code?: number } } | null;
+  const providerId = result?.messages?.[0]?.id;
   const { error: updateError } = await db.from("wa_replies").update(providerId && response.ok
     ? { state: "accepted", provider_id: providerId, error: null }
-    : { state: response.ok ? "unknown" : "failed", error: `WhatsApp (${response.status}): ${result.error?.message ?? "Envio não confirmado."}` }).eq("inbound_id", id);
+    : { state: response.ok ? "unknown" : "failed", error: `WhatsApp (${response.status}): ${result?.error?.message ?? "Envio não confirmado."}` }).eq("inbound_id", id);
   if (updateError) throw updateError;
   if (providerId) await reconcileStatuses(db, providerId);
 }
@@ -123,7 +128,6 @@ async function processMessage(db: Db, id: string) {
     const { data: currentLink, error: currentError } = await db.from("wa_phone_links").select("user_id").eq("phone", m.phone).maybeSingle();
     if (currentError) throw currentError;
     if (currentLink?.user_id !== link.user_id) throw new Error("Telefone desvinculado durante a análise.");
-    const appointmentId = `wa-${id}`;
     const { error: appointmentError } = await db.rpc("wa_finalize_appointment", { p_message: id, p_user: link.user_id, p_appointment: { ...appointment, description: [appointment.description, "Criado pelo assistente WhatsApp do iAgenda."].filter(Boolean).join("\n") }, p_reply: `Registrado: ${appointment.title}, ${appointment.date.split("-").reverse().join("/")} às ${appointment.time} (horário de Brasília). Veja ou edite em https://ia-genda.lovable.app/calendario` });
     if (appointmentError) throw appointmentError;
     const { error: previousUpdateError } = await db.from("wa_assistant_messages").update({ state: "completed" }).eq("user_id", link.user_id).eq("state", "clarification").lt("sent_at", m.sent_at);
@@ -134,12 +138,17 @@ async function processMessage(db: Db, id: string) {
       if (pauseError) throw pauseError;
     }
     await set({ state: "error", processing_error: "Não foi possível concluir. Verifique credenciais e processamento." });
+    await saveReply(db, id, m.phone, "Não consegui concluir o registro agora. Confira sua agenda antes de enviar novamente ou tente mais tarde.");
   }
 }
 export async function processEvent(db: Db, ev: { id: number; event: string; payload: unknown; attempts: number }) {
   const { error: attemptError } = await db.from("whatsapp_webhook_events").update({ attempts: ev.attempts + 1 }).eq("id", ev.id); if (attemptError) throw attemptError;
   try {
     for (const value of changes(ev.payload)) {
+      if (ev.event === "whatsapp.account_update" && (["PARTNER_REMOVED", "PARTNER_APP_UNINSTALLED", "ACCOUNT_OFFBOARDED"].includes(value.event ?? "") || value.ban_info?.waba_ban_state === "DISABLE")) {
+        const { error: pauseError } = await db.from("wa_processing_control").upsert({ id: 1, paused_reason: "Conexão WhatsApp interrompida. Reconecte o número oficial no Lovable." }, { onConflict: "id" });
+        if (pauseError) throw pauseError;
+      }
       for (const m of value.messages ?? []) {
         if (!/^\d{8,15}$/.test(m.from) || !m.id || !m.timestamp) throw new Error("Mensagem inválida.");
         const sentAt = new Date(Number(m.timestamp) * 1000); if (Number.isNaN(sentAt.getTime())) throw new Error("Data inválida.");

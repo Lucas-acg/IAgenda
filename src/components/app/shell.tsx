@@ -134,7 +134,9 @@ function useReminderNotifications() {
         if (due(when)) notify(`r-${r.id}-${today}`, r.name, `Lembrete diário das ${r.time}`);
       });
       data.appointments.filter((a) => !a.done).forEach((a) => {
-        const [h = 0, m = 0] = a.time.split(":").map(Number); const start = parseISODate(a.date); start.setHours(h, m, 0, 0);
+        const [h = 0, m = 0] = a.time.split(":").map(Number);
+        const start = a.id.startsWith("wa-") ? new Date(`${a.date}T${a.time}:00-03:00`) : parseISODate(a.date);
+        if (!a.id.startsWith("wa-")) start.setHours(h, m, 0, 0);
         if (a.reminder > 0) { const before = new Date(start.getTime() - a.reminder * 60_000); if (due(before)) notify(`a-${a.id}-pre`, a.title, `Começa às ${a.time} — ${dateLabel(a.date)}`); }
         if (due(start)) notify(`a-${a.id}`, a.title, `Agora, às ${a.time}`);
       });
