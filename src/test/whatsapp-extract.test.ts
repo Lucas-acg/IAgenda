@@ -8,8 +8,8 @@ describe("WhatsApp → compromisso", () => {
   it("cria compromisso quando há data e hora marcada", () => {
     expect(toAppointment(base)).toEqual({ title: "Dentista", date: "2026-11-16", time: "15:00", category: "saude", description: "" });
   });
-  it("cria evento com nome e data mesmo sem horário", () => {
-    expect(toAppointment({ ...base, time: null })).toMatchObject({ title: "Dentista", date: "2026-11-16", time: "" });
+  it("solicita esclarecimento em vez de criar sem horário", () => {
+    expect(toAppointment({ ...base, time: null })).toBeNull();
   });
   it("ignora evento sem nome ou sem data", () => {
     expect(toAppointment({ ...base, title: null })).toBeNull();
