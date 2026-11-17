@@ -10,7 +10,7 @@
 # Integração com WhatsApp
 - [ ] Substituir conexão individual por assistente em número oficial compartilhado.
 - [ ] Vincular telefone por código temporário; isolar usuários e evitar duplicações.
-- [ ] Anthropic Claude Haiku 5.5 com chave própria, esclarecimentos e confirmação pelo WhatsApp.
+- [ ] Claude Haiku 4.5 integrado ao Lovable, esclarecimentos e confirmação pelo WhatsApp.
 - [ ] Reformular WhatsApp: vínculo, número oficial, iniciar conversa, editar/excluir detectados.
 - [ ] Manual completo e testes reais de dois usuários (dependem da Meta e credenciais).
 - [x] Aba WhatsApp: escolher conversas verificadas e ver compromissos criados pela IA.
