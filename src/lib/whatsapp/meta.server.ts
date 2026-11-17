@@ -9,7 +9,8 @@ function encryptionKey() {
 export function encryptToken(token: string) {
   const iv = randomBytes(12);
   const cipher = createCipheriv("aes-256-gcm", encryptionKey(), iv);
-  return Buffer.concat([iv, cipher.getAuthTag ? Buffer.alloc(0) : Buffer.alloc(0), cipher.update(token), cipher.final(), cipher.getAuthTag()]).toString("base64");
+  const ciphertext = Buffer.concat([cipher.update(token), cipher.final()]);
+  return Buffer.concat([iv, ciphertext, cipher.getAuthTag()]).toString("base64");
 }
 export function decryptToken(value: string) {
   const buf = Buffer.from(value, "base64");
