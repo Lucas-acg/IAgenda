@@ -8,8 +8,12 @@ describe("WhatsApp → compromisso", () => {
   it("cria compromisso quando há data e hora marcada", () => {
     expect(toAppointment(base)).toEqual({ title: "Dentista", date: "2026-11-16", time: "15:00", category: "saude", description: "" });
   });
-  it("não cria sem horário específico", () => {
-    expect(toAppointment({ ...base, time: null })).toBeNull();
+  it("cria evento com nome e data mesmo sem horário", () => {
+    expect(toAppointment({ ...base, time: null })).toMatchObject({ title: "Dentista", date: "2026-11-16", time: "" });
+  });
+  it("ignora evento sem nome ou sem data", () => {
+    expect(toAppointment({ ...base, title: null })).toBeNull();
+    expect(toAppointment({ ...base, date: null })).toBeNull();
   });
   it("não cria quando a IA diz que não é compromisso", () => {
     expect(toAppointment({ ...base, is_appointment: false })).toBeNull();
