@@ -8,6 +8,9 @@
 - [x] Oferecer importação antiga uma vez, validar backups e restringir exclusões ao usuário.
 
 # Integração com WhatsApp
+- [ ] Conexão individual oficial Meta, contatos privados e monitoramento recebido/enviado.
+- [ ] Claude Haiku 4.5, eventos com nome/data e verificação do fluxo.
+- [ ] Manual completo e configuração segura da Meta.
 - [x] Aba WhatsApp: escolher conversas verificadas e ver compromissos criados pela IA.
 - [x] Receptor oficial de webhooks com caixa de entrada durável e recuperação.
 - [x] IA real (Lovable AI) que cria compromissos com data e hora.
