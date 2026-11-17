@@ -3,7 +3,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const assistantStatus = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async ({ context }) => {
   const phone = process.env["WHATSAPP_OFFICIAL_NUMBER"] ?? "";
-  const configured = Boolean(phone && process.env["WHATSAPP_API_KEY"] && process.env["ANTHROPIC_API_KEY"]);
+  const configured = Boolean(phone && process.env["WHATSAPP_API_KEY"]);
   const { data, error } = await context.supabase.from("wa_phone_links").select("phone,linked_at").eq("user_id", context.userId).maybeSingle();
   if (error) throw new Error("Não foi possível carregar o vínculo.");
   return { configured, officialNumber: phone.replace(/\D/g, ""), linkedPhone: data?.phone ?? null };
