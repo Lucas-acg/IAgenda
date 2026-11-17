@@ -12,7 +12,6 @@ export const Route = createFileRoute("/api/public/whatsapp/analyze")({
         const { data, error } = await db.auth.getUser(token);
         if (error || !data.user) return Response.json({ error: "Não autenticado" }, { status: 401 });
         try {
-          await processPending(db, 5);
           const count = await analyzePendingMessages(db, data.user.id);
           return Response.json({ analyzed: count });
         } catch (e) {

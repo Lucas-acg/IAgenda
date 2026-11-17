@@ -287,6 +287,193 @@ export type Database = {
           },
         ]
       }
+      wa_accounts: {
+        Row: {
+          active: boolean
+          connected_at: string
+          display_phone_number: string
+          phone_number_id: string
+          token_ciphertext: string
+          user_id: string
+          waba_id: string
+        }
+        Insert: {
+          active?: boolean
+          connected_at?: string
+          display_phone_number?: string
+          phone_number_id: string
+          token_ciphertext: string
+          user_id: string
+          waba_id: string
+        }
+        Update: {
+          active?: boolean
+          connected_at?: string
+          display_phone_number?: string
+          phone_number_id?: string
+          token_ciphertext?: string
+          user_id?: string
+          waba_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wa_accounts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      wa_contacts: {
+        Row: {
+          contact_name: string
+          last_message_at: string
+          last_preview: string
+          monitored_since: string | null
+          user_id: string
+          wa_id: string
+          watched: boolean
+        }
+        Insert: {
+          contact_name?: string
+          last_message_at?: string
+          last_preview?: string
+          monitored_since?: string | null
+          user_id: string
+          wa_id: string
+          watched?: boolean
+        }
+        Update: {
+          contact_name?: string
+          last_message_at?: string
+          last_preview?: string
+          monitored_since?: string | null
+          user_id?: string
+          wa_id?: string
+          watched?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wa_contacts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      wa_messages: {
+        Row: {
+          ai_error: string | null
+          ai_status: string
+          appointment_date: string | null
+          appointment_id: string | null
+          appointment_time: string | null
+          appointment_title: string | null
+          body: string
+          direction: string
+          id: string
+          sent_at: string
+          user_id: string
+          wa_id: string
+        }
+        Insert: {
+          ai_error?: string | null
+          ai_status?: string
+          appointment_date?: string | null
+          appointment_id?: string | null
+          appointment_time?: string | null
+          appointment_title?: string | null
+          body?: string
+          direction: string
+          id: string
+          sent_at: string
+          user_id: string
+          wa_id: string
+        }
+        Update: {
+          ai_error?: string | null
+          ai_status?: string
+          appointment_date?: string | null
+          appointment_id?: string | null
+          appointment_time?: string | null
+          appointment_title?: string | null
+          body?: string
+          direction?: string
+          id?: string
+          sent_at?: string
+          user_id?: string
+          wa_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wa_messages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "wa_messages_user_id_wa_id_fkey"
+            columns: ["user_id", "wa_id"]
+            isOneToOne: false
+            referencedRelation: "wa_contacts"
+            referencedColumns: ["user_id", "wa_id"]
+          },
+        ]
+      }
+      wa_oauth_states: {
+        Row: {
+          expires_at: string
+          state: string
+          user_id: string
+        }
+        Insert: {
+          expires_at: string
+          state: string
+          user_id: string
+        }
+        Update: {
+          expires_at?: string
+          state?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      whatsapp_webhook_events: {
+        Row: {
+          attempts: number
+          delivery_id: string
+          event: string
+          id: number
+          payload: Json
+          processed_at: string | null
+          processing_error: string | null
+          received_at: string
+        }
+        Insert: {
+          attempts?: number
+          delivery_id: string
+          event: string
+          id?: number
+          payload: Json
+          processed_at?: string | null
+          processing_error?: string | null
+          received_at?: string
+        }
+        Update: {
+          attempts?: number
+          delivery_id?: string
+          event?: string
+          id?: number
+          payload?: Json
+          processed_at?: string | null
+          processing_error?: string | null
+          received_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
