@@ -7,7 +7,7 @@ export const Route = createFileRoute("/api/public/whatsapp/analyze")({
       POST: async ({ request }) => {
         const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
         if (!token) return Response.json({ error: "Não autenticado" }, { status: 401 });
-        const { getAdmin, analyzePendingMessages, processPending } = await import("@/lib/whatsapp/process.server");
+        const { getAdmin, analyzePendingMessages } = await import("@/lib/whatsapp/process.server");
         const db = await getAdmin();
         const { data, error } = await db.auth.getUser(token);
         if (error || !data.user) return Response.json({ error: "Não autenticado" }, { status: 401 });

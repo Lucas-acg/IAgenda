@@ -1,5 +1,6 @@
 /** Pure helpers for WhatsApp → appointment extraction (safe for tests and the browser). */
 export const CATEGORIES = ["trabalho", "saude", "estudos", "pessoal", "social", "outro"] as const;
+export const LINK_CODE_LIFETIME_MS = 10 * 60_000;
 
 export interface Extraction {
   is_appointment: boolean;

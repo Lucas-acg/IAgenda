@@ -19,6 +19,7 @@ import { Route as AuthenticatedEstatisticasRouteImport } from './routes/_authent
 import { Route as AuthenticatedWhatsappRouteImport } from './routes/_authenticated/whatsapp'
 import { Route as ApiPublicWhatsappAnalyzeRouteImport } from './routes/api/public/whatsapp/analyze'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
+import { Route as ApiPublicWhatsappWorkerRouteImport } from './routes/api/public/whatsapp/worker'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
@@ -73,6 +74,11 @@ const ApiPublicWhatsappWebhookRoute =
     path: '/api/public/whatsapp/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicWhatsappWorkerRoute = ApiPublicWhatsappWorkerRouteImport.update({
+  id: '/api/public/whatsapp/worker',
+  path: '/api/public/whatsapp/worker',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -84,6 +90,7 @@ export interface FileRoutesByFullPath {
   '/whatsapp': typeof AuthenticatedWhatsappRoute
   '/api/public/whatsapp/analyze': typeof ApiPublicWhatsappAnalyzeRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
+  '/api/public/whatsapp/worker': typeof ApiPublicWhatsappWorkerRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
@@ -95,6 +102,7 @@ export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
   '/api/public/whatsapp/analyze': typeof ApiPublicWhatsappAnalyzeRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
+  '/api/public/whatsapp/worker': typeof ApiPublicWhatsappWorkerRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -108,6 +116,7 @@ export interface FileRoutesById {
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/api/public/whatsapp/analyze': typeof ApiPublicWhatsappAnalyzeRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
+  '/api/public/whatsapp/worker': typeof ApiPublicWhatsappWorkerRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -121,6 +130,7 @@ export interface FileRouteTypes {
     | '/whatsapp'
     | '/api/public/whatsapp/analyze'
     | '/api/public/whatsapp/webhook'
+    | '/api/public/whatsapp/worker'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
@@ -132,6 +142,7 @@ export interface FileRouteTypes {
     | '/'
     | '/api/public/whatsapp/analyze'
     | '/api/public/whatsapp/webhook'
+    | '/api/public/whatsapp/worker'
   id:
     | '__root__'
     | '/_authenticated'
@@ -144,6 +155,7 @@ export interface FileRouteTypes {
     | '/_authenticated/'
     | '/api/public/whatsapp/analyze'
     | '/api/public/whatsapp/webhook'
+    | '/api/public/whatsapp/worker'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -152,6 +164,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   ApiPublicWhatsappAnalyzeRoute: typeof ApiPublicWhatsappAnalyzeRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
+  ApiPublicWhatsappWorkerRoute: typeof ApiPublicWhatsappWorkerRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -226,6 +239,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWhatsappWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/whatsapp/worker': {
+      id: '/api/public/whatsapp/worker'
+      path: '/api/public/whatsapp/worker'
+      fullPath: '/api/public/whatsapp/worker'
+      preLoaderRoute: typeof ApiPublicWhatsappWorkerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -254,6 +274,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   ApiPublicWhatsappAnalyzeRoute: ApiPublicWhatsappAnalyzeRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
+  ApiPublicWhatsappWorkerRoute: ApiPublicWhatsappWorkerRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

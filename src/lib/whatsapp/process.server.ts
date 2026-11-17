@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/integrations/supabase/types";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
+import { GatewayError } from "@lovable.dev/ai-gateway";
 import { extractAppointment } from "./ai.server";
 import { toAppointment, localNow } from "./extract";
 
@@ -10,6 +11,8 @@ export async function getAdmin(): Promise<Db> {
   return supabaseAdmin;
 }
 type MetaValue = {
+  event?: string;
+  ban_info?: { waba_ban_state?: string };
   metadata?: { phone_number_id?: string };
   messages?: { id: string; from: string; timestamp: string; type?: string; text?: { body?: string } }[];
   statuses?: { id: string; status: string; timestamp: string; errors?: unknown[] }[];
@@ -30,6 +33,9 @@ async function saveReply(db: Db, id: string, phone: string, body: string) {
 async function sendReply(db: Db, id: string) {
   const apiKey = process.env["WHATSAPP_API_KEY"], lovableKey = process.env["LOVABLE_API_KEY"];
   if (!apiKey || !lovableKey) throw new Error("Número oficial não configurado.");
+  const { data: control, error: controlError } = await db.from("wa_processing_control").select("paused_reason").eq("id", 1).maybeSingle();
+  if (controlError) throw controlError;
+  if (control?.paused_reason) return;
   const { data: rows, error } = await db.from("wa_replies").update({ state: "sending" }).eq("inbound_id", id).eq("state", "pending").select("*");
   if (error) throw error;
   const reply = rows?.[0]; if (!reply) return;
@@ -44,11 +50,11 @@ async function sendReply(db: Db, id: string) {
     if (updateError) throw updateError;
     return;
   }
-  const result = await response.json() as { messages?: { id?: string }[]; error?: { message?: string; code?: number } };
-  const providerId = result.messages?.[0]?.id;
+  const result = await response.json().catch(() => null) as { messages?: { id?: string }[]; error?: { message?: string; code?: number } } | null;
+  const providerId = result?.messages?.[0]?.id;
   const { error: updateError } = await db.from("wa_replies").update(providerId && response.ok
     ? { state: "accepted", provider_id: providerId, error: null }
-    : { state: response.ok ? "unknown" : "failed", error: `WhatsApp (${response.status}): ${result.error?.message ?? "Envio não confirmado."}` }).eq("inbound_id", id);
+    : { state: response.ok ? "unknown" : "failed", error: `WhatsApp (${response.status}): ${result?.error?.message ?? "Envio não confirmado."}` }).eq("inbound_id", id);
   if (updateError) throw updateError;
   if (providerId) await reconcileStatuses(db, providerId);
 }
@@ -70,9 +76,14 @@ async function applyStatus(db: Db, status: NonNullable<MetaValue["statuses"]>[nu
   return true;
 }
 async function reconcileStatuses(db: Db, providerId: string) {
-  const { data, error } = await db.from("whatsapp_webhook_events").select("payload").eq("event", "whatsapp.status").order("received_at", { ascending: false }).limit(100);
+  const { data, error } = await db.from("wa_delivery_statuses").select("*").eq("provider_id", providerId).eq("applied", false).order("provider_at");
   if (error) throw error;
-  for (const row of data ?? []) for (const value of changes(row.payload)) for (const s of value.statuses ?? []) if (s.id === providerId) await applyStatus(db, s);
+  for (const row of data ?? []) {
+    if (await applyStatus(db, { id: row.provider_id, status: row.status, timestamp: String(new Date(row.provider_at).getTime() / 1000), errors: Array.isArray(row.errors) ? row.errors : [] })) {
+      const { error: updateError } = await db.from("wa_delivery_statuses").update({ applied: true }).eq("delivery_id", row.delivery_id).eq("provider_id", row.provider_id).eq("status", row.status).eq("provider_at", row.provider_at);
+      if (updateError) throw updateError;
+    }
+  }
 }
 async function processMessage(db: Db, id: string) {
   const { data: m, error } = await db.from("wa_assistant_messages").select("*").eq("id", id).single();
@@ -117,28 +128,40 @@ async function processMessage(db: Db, id: string) {
     const { data: currentLink, error: currentError } = await db.from("wa_phone_links").select("user_id").eq("phone", m.phone).maybeSingle();
     if (currentError) throw currentError;
     if (currentLink?.user_id !== link.user_id) throw new Error("Telefone desvinculado durante a análise.");
-    const appointmentId = `wa-${id}`;
-    const { error: appointmentError } = await db.from("appointments").upsert({ user_id: link.user_id, id: appointmentId, ...appointment, description: [appointment.description, "Criado pelo assistente WhatsApp do iAgenda."].filter(Boolean).join("\n"), done: false, reminder: 15 }, { onConflict: "user_id,id", ignoreDuplicates: true });
+    const { error: appointmentError } = await db.rpc("wa_finalize_appointment", { p_message: id, p_user: link.user_id, p_appointment: { ...appointment, description: [appointment.description, "Criado pelo assistente WhatsApp do iAgenda."].filter(Boolean).join("\n") }, p_reply: `Registrado: ${appointment.title}, ${appointment.date.split("-").reverse().join("/")} às ${appointment.time} (horário de Brasília). Veja ou edite em https://ia-genda.lovable.app/calendario` });
     if (appointmentError) throw appointmentError;
-    await saveReply(db, id, m.phone, `Registrado: ${appointment.title}, ${appointment.date.split("-").reverse().join("/")} às ${appointment.time} (horário de Brasília). Veja ou edite em https://ia-genda.lovable.app/calendario`);
-    await set({ state: "created", appointment_id: appointmentId });
     const { error: previousUpdateError } = await db.from("wa_assistant_messages").update({ state: "completed" }).eq("user_id", link.user_id).eq("state", "clarification").lt("sent_at", m.sent_at);
     if (previousUpdateError) throw previousUpdateError;
-  } catch {
+  } catch (failure) {
+    if (failure instanceof GatewayError && [402,403,429].includes(failure.httpStatus ?? 0)) {
+      const { error: pauseError } = await db.from("wa_processing_control").update({ paused_reason: `IA indisponível (${failure.httpStatus}). Requer revisão do administrador.` }).eq("id", 1);
+      if (pauseError) throw pauseError;
+    }
     await set({ state: "error", processing_error: "Não foi possível concluir. Verifique credenciais e processamento." });
+    await saveReply(db, id, m.phone, "Não consegui concluir o registro agora. Confira sua agenda antes de enviar novamente ou tente mais tarde.");
   }
 }
 export async function processEvent(db: Db, ev: { id: number; event: string; payload: unknown; attempts: number }) {
   const { error: attemptError } = await db.from("whatsapp_webhook_events").update({ attempts: ev.attempts + 1 }).eq("id", ev.id); if (attemptError) throw attemptError;
   try {
     for (const value of changes(ev.payload)) {
+      if (ev.event === "whatsapp.account_update" && (["PARTNER_REMOVED", "PARTNER_APP_UNINSTALLED", "ACCOUNT_OFFBOARDED"].includes(value.event ?? "") || value.ban_info?.waba_ban_state === "DISABLE")) {
+        const { error: pauseError } = await db.from("wa_processing_control").upsert({ id: 1, paused_reason: "Conexão WhatsApp interrompida. Reconecte o número oficial no Lovable." }, { onConflict: "id" });
+        if (pauseError) throw pauseError;
+      }
       for (const m of value.messages ?? []) {
         if (!/^\d{8,15}$/.test(m.from) || !m.id || !m.timestamp) throw new Error("Mensagem inválida.");
         const sentAt = new Date(Number(m.timestamp) * 1000); if (Number.isNaN(sentAt.getTime())) throw new Error("Data inválida.");
         const { error } = await db.from("wa_assistant_messages").upsert({ id: m.id, phone: m.from, body: (m.text?.body ?? "").slice(0, 4000), sent_at: sentAt.toISOString() }, { onConflict: "id", ignoreDuplicates: true });
         if (error) throw error;
       }
-      for (const status of value.statuses ?? []) await applyStatus(db, status);
+      for (const status of value.statuses ?? []) {
+        const at = new Date(Number(status.timestamp) * 1000);
+        if (Number.isNaN(at.getTime())) throw new Error("Data de status inválida.");
+        const { error: statusError } = await db.from("wa_delivery_statuses").upsert({ delivery_id: String(ev.id), provider_id: status.id, status: status.status, provider_at: at.toISOString(), errors: (status.errors ?? []) as Json }, { onConflict: "delivery_id,provider_id,status,provider_at", ignoreDuplicates: true });
+        if (statusError) throw statusError;
+        await reconcileStatuses(db, status.id);
+      }
     }
     const { error } = await db.from("whatsapp_webhook_events").update({ processed_at: new Date().toISOString(), processing_error: null }).eq("id", ev.id); if (error) throw error;
     return true;
@@ -148,15 +171,29 @@ export async function processEvent(db: Db, ev: { id: number; event: string; payl
   }
 }
 export async function processPending(db: Db, limit = 5) {
+  const token = randomUUID();
+  const { data: acquired, error: lockError } = await db.rpc("wa_acquire_lease", { p_token: token });
+  if (lockError) throw lockError;
+  if (!acquired) return;
+  try {
   const { data: events, error } = await db.from("whatsapp_webhook_events").select("id,event,payload,attempts").is("processed_at", null).order("attempts").order("received_at").limit(limit); if (error) throw error;
   for (const event of events ?? []) await processEvent(db, event);
   const { data: messages, error: messageError } = await db.from("wa_assistant_messages").select("id").eq("state", "pending").order("sent_at").limit(limit); if (messageError) throw messageError;
-  for (const m of messages ?? []) await processMessage(db, m.id);
+  for (const m of messages ?? []) {
+    const { data: control, error: controlError } = await db.from("wa_processing_control").select("paused_reason").eq("id", 1).single();
+    if (controlError) throw controlError;
+    if (control.paused_reason) break;
+    await processMessage(db, m.id);
+  }
   const { data: replies, error: replyError } = await db.from("wa_replies").select("inbound_id").eq("state", "pending").limit(limit); if (replyError) throw replyError;
   for (const reply of replies ?? []) await sendReply(db, reply.inbound_id);
+  } finally {
+    const { error: releaseError } = await db.from("wa_processing_control").update({ lease_until: null, lease_token: null }).eq("id", 1).eq("lease_token", token);
+    if (releaseError) throw releaseError;
+  }
 }
 export async function analyzePendingMessages(db: Db, userId: string, limit = 20) {
   const { data, error } = await db.from("wa_assistant_messages").select("id").eq("user_id", userId).eq("state", "pending").limit(limit); if (error) throw error;
-  for (const m of data ?? []) await processMessage(db, m.id);
+  // Recovery is triggered by signed webhooks or the protected worker, never by page views.
   return data?.length ?? 0;
 }

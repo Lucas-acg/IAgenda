@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { localNow, toAppointment } from "@/lib/whatsapp/extract";
+import { LINK_CODE_LIFETIME_MS, localNow, toAppointment } from "@/lib/whatsapp/extract";
 import { itemsFromPayload } from "@/lib/whatsapp/process.server";
 
 const base = { is_appointment: true, title: "Dentista", date: "2026-11-16", time: "15:00", category: "saude" as const, description: null };
 
 describe("WhatsApp → compromisso", () => {
+  it("o código de vinculação expira em dez minutos", () => {
+    expect(LINK_CODE_LIFETIME_MS).toBe(600000);
+  });
   it("cria compromisso quando há data e hora marcada", () => {
     expect(toAppointment(base)).toEqual({ title: "Dentista", date: "2026-11-16", time: "15:00", category: "saude", description: "" });
   });

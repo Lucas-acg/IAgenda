@@ -1,5 +1,5 @@
--- IAgenda · Integração com WhatsApp (somente tabelas NOVAS; nenhuma tabela existente é alterada).
--- Aplicar pelo Lovable (peça: "aplique a migration de docs/whatsapp-setup.sql").
+-- OBSOLETO: integração anterior de monitoramento abandonada.
+-- NÃO APLICAR: o assistente compartilhado já possui tabelas nas migrations gerenciadas.
 
 -- Caixa de entrada durável dos webhooks (somente o servidor acessa).
 CREATE TABLE public.whatsapp_webhook_events (
