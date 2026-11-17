@@ -121,7 +121,8 @@ function useReminderNotifications() {
     if (!ready || !data.prefs.notifications) return;
     fired.current ??= loadFired();
     const tick = () => {
-      const set = fired.current!; const now = new Date(); const today = toISODate(now); const t = nowTime();
+      const set = fired.current; if (!set) return;
+      const now = new Date(); const today = toISODate(now); const t = nowTime();
       const notify = (key: string, title: string, body: string) => {
         if (set.has(key)) return; set.add(key);
         try { localStorage.setItem(FIRED_KEY, JSON.stringify([...set].slice(-300))); } catch { /* ignore */ }

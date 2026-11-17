@@ -15,6 +15,13 @@
       "when": 1794875608513,
       "tag": "0001_whatsapp_per_user",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794879262724,
+      "tag": "0002_whatsapp_shared_assistant",
+      "breakpoints": true
     }
   ]
 }

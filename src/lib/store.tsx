@@ -156,6 +156,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const update = useCallback((fn: (d: AppData) => AppData) => { dirty.current = true; setRaw(fn); }, []);
   const setData = update;
+  useEffect(() => {
+    if (!ready || !userId) return;
+    const refresh = () => {
+      if (dirty.current || document.visibilityState !== "visible") return;
+      void loadCloudData(userId).then(({ data: cloud }) => {
+        if (!dirty.current && loadedFor.current === userId) setRaw(cloud);
+      }).catch(() => {});
+    };
+    const interval = window.setInterval(refresh, 15000);
+    window.addEventListener("focus", refresh);
+    return () => { window.clearInterval(interval); window.removeEventListener("focus", refresh); };
+  }, [ready, userId]);
 
   const value = useMemo<Ctx>(() => ({
     data, ready, setData,
@@ -167,7 +179,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     addHabit: (h) => update((d) => ({ ...d, habits: [...d.habits, { ...h, id: uid() }] })),
     removeHabit: (id) => update((d) => ({ ...d, habits: d.habits.filter((x) => x.id !== id) })),
     resetAll: () => update(() => defaultData()),
-    reload: () => { if (userId) loadCloudData(userId).then(({ data: cloud }) => { dirty.current = false; setRaw(cloud); }).catch(() => toast.error("Não foi possível atualizar seus dados.")); },
+    reload: () => { if (userId && !dirty.current) loadCloudData(userId).then(({ data: cloud }) => { if (!dirty.current) setRaw(cloud); }).catch(() => toast.error("Não foi possível atualizar seus dados.")); },
   }), [data, ready, setData, update, userId]);
 
   return <StoreCtx.Provider value={value}>{children}</StoreCtx.Provider>;
