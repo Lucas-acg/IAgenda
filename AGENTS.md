@@ -37,3 +37,6 @@ use the editor.
 - `StoreProvider` lives only inside the `_authenticated` layout and syncs to the cloud through `src/lib/cloud-store.ts`; the root route only mounts `AuthProvider`, so public pages never load user data.
 - WhatsApp: the signed receiver is `POST /api/public/whatsapp/webhook`; every delivery is stored in `whatsapp_webhook_events` before processing, and AI-created appointments use the deterministic id `wa-<message id>` so retries never duplicate them.
 - Keep AI extraction rules (what counts as an appointment) in `src/lib/whatsapp/extract.ts` with tests in `src/test/whatsapp-extract.test.ts`.
+- The WhatsApp assistant uses one workspace connection and server-verified phone links; never use per-user Meta OAuth or infer user identity from message text.
+- Preserve cloud-created appointments outside the client's loaded ID baseline when saving local edits, because webhook writes can arrive between reads.
+- Process verified WhatsApp deliveries through a durable inbox and request-scoped background execution; ambiguous outbound sends require reconciliation, not blind replay.
