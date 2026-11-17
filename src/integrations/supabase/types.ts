@@ -410,6 +410,33 @@ export type Database = {
           },
         ]
       }
+      wa_delivery_statuses: {
+        Row: {
+          applied: boolean
+          delivery_id: string
+          errors: Json | null
+          provider_at: string
+          provider_id: string
+          status: string
+        }
+        Insert: {
+          applied?: boolean
+          delivery_id: string
+          errors?: Json | null
+          provider_at: string
+          provider_id: string
+          status: string
+        }
+        Update: {
+          applied?: boolean
+          delivery_id?: string
+          errors?: Json | null
+          provider_at?: string
+          provider_id?: string
+          status?: string
+        }
+        Relationships: []
+      }
       wa_link_codes: {
         Row: {
           code_hash: string
@@ -540,6 +567,27 @@ export type Database = {
           },
         ]
       }
+      wa_processing_control: {
+        Row: {
+          id: number
+          lease_token: string | null
+          lease_until: string | null
+          paused_reason: string | null
+        }
+        Insert: {
+          id?: number
+          lease_token?: string | null
+          lease_until?: string | null
+          paused_reason?: string | null
+        }
+        Update: {
+          id?: number
+          lease_token?: string | null
+          lease_until?: string | null
+          paused_reason?: string | null
+        }
+        Relationships: []
+      }
       wa_replies: {
         Row: {
           body: string
@@ -626,6 +674,16 @@ export type Database = {
     }
     Functions: {
       save_iagenda_data: { Args: { payload: Json }; Returns: undefined }
+      wa_acquire_lease: { Args: { p_token: string }; Returns: boolean }
+      wa_finalize_appointment: {
+        Args: {
+          p_appointment: Json
+          p_message: string
+          p_reply: string
+          p_user: string
+        }
+        Returns: undefined
+      }
       wa_redeem_code: {
         Args: { p_hash: string; p_phone: string }
         Returns: string

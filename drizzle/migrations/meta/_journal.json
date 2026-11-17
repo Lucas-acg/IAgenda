@@ -29,6 +29,13 @@
       "when": 1794879604606,
       "tag": "0003_preserve_assistant_appointments",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794879670664,
+      "tag": "0004_whatsapp_processing_guards",
+      "breakpoints": true
     }
   ]
 }
