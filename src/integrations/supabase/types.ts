@@ -325,6 +325,53 @@ export type Database = {
           },
         ]
       }
+      wa_assistant_messages: {
+        Row: {
+          appointment_id: string | null
+          body: string
+          clarification: string | null
+          id: string
+          phone: string
+          processing_error: string | null
+          received_at: string
+          sent_at: string
+          state: string
+          user_id: string | null
+        }
+        Insert: {
+          appointment_id?: string | null
+          body: string
+          clarification?: string | null
+          id: string
+          phone: string
+          processing_error?: string | null
+          received_at?: string
+          sent_at: string
+          state?: string
+          user_id?: string | null
+        }
+        Update: {
+          appointment_id?: string | null
+          body?: string
+          clarification?: string | null
+          id?: string
+          phone?: string
+          processing_error?: string | null
+          received_at?: string
+          sent_at?: string
+          state?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wa_assistant_messages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       wa_contacts: {
         Row: {
           contact_name: string
@@ -358,6 +405,32 @@ export type Database = {
             foreignKeyName: "wa_contacts_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      wa_link_codes: {
+        Row: {
+          code_hash: string
+          expires_at: string
+          user_id: string
+        }
+        Insert: {
+          code_hash: string
+          expires_at: string
+          user_id: string
+        }
+        Update: {
+          code_hash?: string
+          expires_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wa_link_codes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
           },
@@ -441,6 +514,79 @@ export type Database = {
         }
         Relationships: []
       }
+      wa_phone_links: {
+        Row: {
+          linked_at: string
+          phone: string
+          user_id: string
+        }
+        Insert: {
+          linked_at?: string
+          phone: string
+          user_id: string
+        }
+        Update: {
+          linked_at?: string
+          phone?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wa_phone_links_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      wa_replies: {
+        Row: {
+          body: string
+          delivered_at: string | null
+          error: string | null
+          failed_at: string | null
+          inbound_id: string
+          phone: string
+          provider_id: string | null
+          read_at: string | null
+          sent_at: string | null
+          state: string
+        }
+        Insert: {
+          body: string
+          delivered_at?: string | null
+          error?: string | null
+          failed_at?: string | null
+          inbound_id: string
+          phone: string
+          provider_id?: string | null
+          read_at?: string | null
+          sent_at?: string | null
+          state?: string
+        }
+        Update: {
+          body?: string
+          delivered_at?: string | null
+          error?: string | null
+          failed_at?: string | null
+          inbound_id?: string
+          phone?: string
+          provider_id?: string | null
+          read_at?: string | null
+          sent_at?: string | null
+          state?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wa_replies_inbound_id_fkey"
+            columns: ["inbound_id"]
+            isOneToOne: true
+            referencedRelation: "wa_assistant_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_webhook_events: {
         Row: {
           attempts: number
@@ -480,6 +626,10 @@ export type Database = {
     }
     Functions: {
       save_iagenda_data: { Args: { payload: Json }; Returns: undefined }
+      wa_redeem_code: {
+        Args: { p_hash: string; p_phone: string }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
