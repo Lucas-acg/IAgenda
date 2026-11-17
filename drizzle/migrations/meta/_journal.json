@@ -8,6 +8,13 @@
       "when": 1794543572062,
       "tag": "0000_iagenda_user_data",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794875608513,
+      "tag": "0001_whatsapp_per_user",
+      "breakpoints": true
     }
   ]
 }
