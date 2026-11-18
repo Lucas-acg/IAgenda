@@ -17,3 +17,8 @@
 - [ ] Conectar número oficial e selecionar Incoming messages (conexão recusada; número não fornecido).
 - [ ] Verificar vínculo, resposta, edição e isolamento real de dois usuários (faltam conexão Meta e sessões autorizadas).
 - [ ] Recuperação durável sem tráfego e retomada administrativa (agendamento suportado não disponível nas ferramentas desta sessão).
+
+# Troca para Telegram
+- [x] Preservar banco e caminhos, aceitar apenas textos privados e substituir vínculo/envio/telas.
+- [ ] Verificar testes e telas autenticadas.
+- [ ] Configurar segredo compartilhado e registrar webhook após publicação.

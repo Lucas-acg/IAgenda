@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { LogOut, MessageCircle, UserX } from "lucide-react";
+import { LogOut, Send, UserX } from "lucide-react";
 import { deleteMyAccount } from "@/lib/account.functions";
 import { validateBackup } from "@/lib/backup";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,7 +41,7 @@ const SECTIONS = [
   { k: "dias", l: "Dias importantes", d: "Aniversários e datas anuais", icon: Cake },
   { k: "lembretes", l: "Eventos diários e lembretes", d: "Água, estudo, remédios…", icon: BellRing },
   { k: "preferencias", l: "Preferências", d: "Notificações, aparência e dados", icon: SlidersHorizontal },
-  { k: "whatsapp", l: "WhatsApp", d: "Compromissos a partir das conversas", icon: MessageCircle },
+  { k: "whatsapp", l: "Telegram", d: "Compromissos a partir das conversas", icon: Send },
   { k: "conta", l: "Conta", d: "Sair ou excluir sua conta", icon: UserX },
 ] as const;
 type Key = (typeof SECTIONS)[number]["k"];
@@ -139,7 +139,7 @@ function SectionBody({ k }: { k: Key }) {
   if (k === "mensal") return <Report kind="mensal" />;
   if (k === "dias") return <ImportantDays />;
   if (k === "lembretes") return <Reminders />;
-  if (k === "whatsapp") return <div className="space-y-3"><p className="text-sm text-muted-foreground">Escolha quais conversas a IA verifica para criar compromissos automaticamente.</p><Button asChild className="h-11 rounded-xl"><Link to="/whatsapp"><MessageCircle className="size-4" />Abrir integração com WhatsApp</Link></Button></div>;
+  if (k === "whatsapp") return <div className="space-y-3"><Button asChild className="h-11 rounded-xl"><Link to="/whatsapp"><Send className="size-4" />Abrir integração com Telegram</Link></Button></div>;
   if (k === "conta") return <DeleteAccount />;
   return <Preferences />;
 }

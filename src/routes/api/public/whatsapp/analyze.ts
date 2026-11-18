@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-// Called by the signed-in owner from the WhatsApp tab to analyse pending messages of watched chats.
+// Called by the signed-in owner from the Telegram tab to inspect pending messages.
 export const Route = createFileRoute("/api/public/whatsapp/analyze")({
   server: {
     handlers: {
@@ -15,7 +15,7 @@ export const Route = createFileRoute("/api/public/whatsapp/analyze")({
           const count = await analyzePendingMessages(db, data.user.id);
           return Response.json({ analyzed: count });
         } catch (e) {
-          console.error("whatsapp analyze failed", e);
+          console.error("Telegram analyze failed", e);
           return Response.json({ error: "Não foi possível analisar agora." }, { status: 500 });
         }
       },
