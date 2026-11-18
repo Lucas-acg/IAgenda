@@ -20,5 +20,7 @@
 
 # Troca para Telegram
 - [x] Preservar banco e caminhos, aceitar apenas textos privados e substituir vínculo/envio/telas.
-- [ ] Verificar testes e telas autenticadas.
-- [ ] Configurar segredo compartilhado e registrar webhook após publicação.
+- [x] Testes do Telegram e proteção do webhook verificados (14 testes; grupos ignorados e ausência de segredo rejeitada).
+- [ ] Verificar vínculo, criação e resposta real (aguarda login autorizado e registro do webhook; confirmação remota do bot excedeu o tempo limite).
+- [x] Configurar TELEGRAM_BOT_TOKEN, TELEGRAM_BOT_USERNAME e TELEGRAM_WEBHOOK_SECRET pelo armazenamento seguro.
+- [ ] Registrar webhook após publicação (usuário fará registro com segredo copiado do formulário).
