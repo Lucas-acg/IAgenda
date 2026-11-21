@@ -1,7 +1,7 @@
 # Ajustes do IAgenda
 - [x] Corrigir validação, carregamento, sincronização, backup, calendário, lembretes e estatísticas solicitados em 21/11.
 - [x] Aplicar cor personalizada, temas e opções de aparência com persistência e compatibilidade de backups.
-- [ ] Verificar as correções, comitar e publicar esta atualização.
+- [x] Verificar as correções e comitar esta atualização; publicação solicitada para ia-genda.lovable.app.
 - [x] Ampliar personalização de aparência em todo o app, preservando registros.
 - [x] Refinar espaçamento, legibilidade e controles das quatro abas.
 - [x] Verificar preferências salvas, navegação e telas de celular/computador com login real.
