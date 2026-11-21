@@ -11,6 +11,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { CATEGORY_LABEL, ENTRY_LABEL, nowTime, toISODate, useStore, type Appointment, type Category, type EntryType } from "@/lib/store";
 import { ENTRY_ICON, ENTRY_COLOR } from "./shared";
 import { cn } from "@/lib/utils";
+import { dateTimeSchema } from "@/lib/backup";
 
 type Kind = "menu" | "compromisso" | "acontecimento" | "habito";
 interface AddCtx { open: (k?: Kind, opts?: { date?: string; edit?: Appointment }) => void }
@@ -20,10 +21,11 @@ export const useAdd = () => useContext(Ctx);
 const selectCls = "h-11 w-full rounded-xl border border-input bg-card px-3 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 export function AddFlowProvider({ children }: { children: ReactNode }) {
+  const { ready } = useStore();
   const [state, setState] = useState<{ open: boolean; kind: Kind; date?: string | undefined; edit?: Appointment | undefined }>({ open: false, kind: "menu" });
   const isMobile = useIsMobile();
   const close = () => setState((s) => ({ ...s, open: false }));
-  const ctx: AddCtx = { open: (k = "menu", o) => setState({ open: true, kind: k, date: o?.date, edit: o?.edit }) };
+  const ctx: AddCtx = { open: (k = "menu", o) => { if (ready) setState({ open: true, kind: k, date: o?.date, edit: o?.edit }); } };
 
   const titles: Record<Kind, [string, string]> = {
     menu: ["O que você quer registrar?", "Escolha uma ação rápida."],
@@ -144,10 +146,11 @@ function EntryForm({ date, onDone }: { date?: string | undefined; onDone: () => 
     <form className="space-y-4" onSubmit={(e) => {
       e.preventDefault();
       if (f.date > today) { toast.error("Acontecimentos são do passado. Para o futuro, crie um compromisso."); return; }
+      if (!dateTimeSchema.safeParse(f).success || (type === "sono" && !dateTimeSchema.safeParse({ date: f.date, time: f.wake }).success)) { toast.error("Preencha a data e os horários."); return; }
       let value = f.value ? Number(f.value) : undefined;
       if (type === "sono") { const [sh = 0, sm = 0] = f.time.split(":").map(Number); const [wh = 0, wm = 0] = f.wake.split(":").map(Number); let minutes = wh * 60 + wm - (sh * 60 + sm); if (minutes <= 0) minutes += 24 * 60; value = Math.round((minutes / 60) * 100) / 100; }
       if (type === "exercicio") value = Number(f.hours) * 60 + Number(f.minutes);
-      addEntry({ type, date: f.date, time: f.time, note: f.note, value, quality: type === "sono" || type === "alimentacao" ? f.quality : undefined });
+      if (!addEntry({ type, date: f.date, time: f.time, note: f.note, value, quality: type === "sono" || type === "alimentacao" ? f.quality : undefined })) return;
       toast.success(`${ENTRY_LABEL[type]} registrado`);
       onDone();
     }}>
@@ -167,11 +170,11 @@ function EntryForm({ date, onDone }: { date?: string | undefined; onDone: () => 
         </div>
       </fieldset>
       <div className="grid grid-cols-2 gap-3">
-        <Field id="en-date" label="Data"><Input id="en-date" type="date" max={today} className="h-11 rounded-xl" value={f.date} onChange={(e) => setF({ ...f, date: e.target.value })} /></Field>
-        <Field id="en-time" label={type === "sono" ? "Hora que dormiu" : "Horário"}><Input id="en-time" type="time" className="h-11 rounded-xl" value={f.time} onChange={(e) => setF({ ...f, time: e.target.value })} /></Field>
+        <Field id="en-date" label="Data"><Input required id="en-date" type="date" max={today} className="h-11 rounded-xl" value={f.date} onChange={(e) => setF({ ...f, date: e.target.value })} /></Field>
+        <Field id="en-time" label={type === "sono" ? "Hora que dormiu" : "Horário"}><Input required id="en-time" type="time" className="h-11 rounded-xl" value={f.time} onChange={(e) => setF({ ...f, time: e.target.value })} /></Field>
       </div>
       {type === "agua" && <Field id="en-val" label="Copos (250 ml)"><Input id="en-val" type="number" inputMode="decimal" min={0} step={1} className="h-11 rounded-xl" value={f.value} onChange={(e) => setF({ ...f, value: e.target.value })} /></Field>}
-      {type === "sono" && <Field id="en-wake" label="Horário em que acordou"><Input id="en-wake" type="time" className="h-11 rounded-xl" value={f.wake} onChange={(e) => setF({ ...f, wake: e.target.value })} /></Field>}
+      {type === "sono" && <Field id="en-wake" label="Horário em que acordou"><Input required id="en-wake" type="time" className="h-11 rounded-xl" value={f.wake} onChange={(e) => setF({ ...f, wake: e.target.value })} /></Field>}
       {type === "exercicio" && <div className="grid grid-cols-2 gap-3"><Field id="en-hours" label="Duração (horas)"><Input id="en-hours" type="number" min={0} max={24} className="h-11 rounded-xl" value={f.hours} onChange={(e) => setF({ ...f, hours: e.target.value })} /></Field><Field id="en-minutes" label="Minutos"><Input id="en-minutes" type="number" min={0} max={59} className="h-11 rounded-xl" value={f.minutes} onChange={(e) => setF({ ...f, minutes: e.target.value })} /></Field></div>}
       {(type === "sono" || type === "alimentacao") && (
         <fieldset>
@@ -199,7 +202,8 @@ function HabitForm({ date, onDone }: { date?: string | undefined; onDone: () => 
     <form className="space-y-4" onSubmit={(e) => {
       e.preventDefault();
       if (!f.name.trim()) { toast.error("Informe o nome do hábito."); return; }
-      addHabit({ ...f, name: f.name.trim() }); toast.success("Hábito registrado"); onDone();
+      if (!dateTimeSchema.safeParse(f).success) { toast.error("Preencha a data e o horário."); return; }
+      if (!addHabit({ ...f, name: f.name.trim() })) return; toast.success("Hábito registrado"); onDone();
     }}>
       <Field id="hb-name" label="Hábito"><Input id="hb-name" className="h-11 rounded-xl" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder="Ex.: Meditar" /></Field>
       <div className="flex flex-wrap gap-2" aria-label="Sugestões">
@@ -212,8 +216,8 @@ function HabitForm({ date, onDone }: { date?: string | undefined; onDone: () => 
         </div>
       </fieldset>
       <div className="grid grid-cols-2 gap-3">
-        <Field id="hb-date" label="Data"><Input id="hb-date" type="date" className="h-11 rounded-xl" value={f.date} onChange={(e) => setF({ ...f, date: e.target.value })} /></Field>
-        <Field id="hb-time" label="Horário"><Input id="hb-time" type="time" className="h-11 rounded-xl" value={f.time} onChange={(e) => setF({ ...f, time: e.target.value })} /></Field>
+        <Field id="hb-date" label="Data"><Input required id="hb-date" type="date" className="h-11 rounded-xl" value={f.date} onChange={(e) => setF({ ...f, date: e.target.value })} /></Field>
+        <Field id="hb-time" label="Horário"><Input required id="hb-time" type="time" className="h-11 rounded-xl" value={f.time} onChange={(e) => setF({ ...f, time: e.target.value })} /></Field>
       </div>
       <Field id="hb-note" label="Observação"><Textarea id="hb-note" className="rounded-xl" rows={2} value={f.note} onChange={(e) => setF({ ...f, note: e.target.value })} placeholder="Opcional" /></Field>
       <Button type="submit" className="h-12 w-full rounded-xl text-base">Registrar hábito</Button>

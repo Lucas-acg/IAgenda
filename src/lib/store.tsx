@@ -3,8 +3,9 @@ import { useRef } from "react";
 import { toast } from "sonner";
 import { DEFAULT_APPEARANCE, normalizeAppearance, type AppearancePrefs } from "./appearance";
 import { useAuth } from "@/components/app/auth-provider";
-import { loadCloudData, markImportOffered, saveCloudData } from "./cloud-store";
-import { validateBackup } from "./backup";
+import { acceptCloudData, loadCloudData, markImportOffered, saveCloudData } from "./cloud-store";
+import { entrySchema, habitSchema, validateBackup } from "./backup";
+import { createPendingSave } from "./pending-save";
 
 export type Category = "trabalho" | "saude" | "estudos" | "pessoal" | "social" | "outro";
 export type EntryType = "sono" | "alimentacao" | "exercicio" | "agua" | "outro";
@@ -76,14 +77,15 @@ export const STATUS_LABEL: Record<AppointmentStatus, string> = {
 };
 
 interface Ctx {
-  data: AppData; ready: boolean;
+  data: AppData; ready: boolean; loadError: boolean;
+  flush: () => Promise<void>;
   setData: (fn: (d: AppData) => AppData) => void;
   addAppointment: (a: Omit<Appointment, "id" | "done" | "createdAt">) => void;
   updateAppointment: (id: string, patch: Partial<Appointment>) => void;
   removeAppointment: (id: string) => void;
-  addEntry: (e: Omit<Entry, "id">) => void;
+  addEntry: (e: Omit<Entry, "id">) => boolean;
   removeEntry: (id: string) => void;
-  addHabit: (h: Omit<HabitLog, "id">) => void;
+  addHabit: (h: Omit<HabitLog, "id">) => boolean;
   removeHabit: (id: string) => void;
   resetAll: () => void;
   /** Re-reads data from the cloud (e.g. after appointments created from WhatsApp). */
@@ -108,16 +110,27 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [data, setRaw] = useState<AppData>(defaultData);
   const [ready, setReady] = useState(false);
   const loadedFor = useRef<string | null>(null);
-  const dirty = useRef(false);
+  const [loadError, setLoadError] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const latest = useRef(data);
+  const queue = useMemo(() => createPendingSave<AppData>(saveCloudData), [userId]);
+  const update = useCallback((fn: (d: AppData) => AppData) => {
+    if (!ready || loadedFor.current !== userId) return;
+    const next = fn(latest.current);
+    latest.current = next; queue.edit(next); setRaw(next);
+  }, [queue, ready, userId]);
+  const applyCloud = useCallback((cloud: AppData) => {
+    latest.current = cloud; acceptCloudData(cloud); setRaw(cloud);
+  }, []);
 
   // Load the signed-in user's data from the cloud; offer the old device data once.
   useEffect(() => {
     if (!userId) return;
     let active = true;
-    setReady(false); dirty.current = false;
+    setReady(false); setLoadError(false); loadedFor.current = null;
     loadCloudData(userId).then(({ data: cloud, importOffered }) => {
       if (!active) return;
-      setRaw(cloud); loadedFor.current = userId; setReady(true);
+      applyCloud(cloud); loadedFor.current = userId; setReady(true);
       const legacy = readLegacy();
       if (legacy && !importOffered && (legacy.appointments.length || legacy.entries.length || legacy.habits.length)) {
         void markImportOffered(userId).catch(() => {});
@@ -125,62 +138,72 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           description: "Quer trazê-los para a sua conta? Seus registros atuais serão mantidos.",
           duration: 20000,
           action: { label: "Importar", onClick: () => {
-            dirty.current = true;
-            setRaw((d) => ({ ...d,
+            const d = latest.current;
+            const next = { ...d,
               appointments: [...d.appointments, ...legacy.appointments.filter((x) => !d.appointments.some((y) => y.id === x.id))],
               entries: [...d.entries, ...legacy.entries.filter((x) => !d.entries.some((y) => y.id === x.id))],
               habits: [...d.habits, ...legacy.habits.filter((x) => !d.habits.some((y) => y.id === x.id))],
               importantDays: [...d.importantDays, ...legacy.importantDays.filter((x) => !d.importantDays.some((y) => y.id === x.id))],
-            }));
+            };
+            latest.current = next; queue.edit(next); setRaw(next);
             toast.success("Dados importados");
           } },
         });
       }
     }).catch(() => {
-      if (active) { console.error("IAgenda: falha ao carregar dados"); toast.error("Não foi possível carregar seus dados. Tente recarregar a página."); }
+      if (active) setLoadError(true);
     });
     return () => { active = false; };
-  }, [userId]);
+  }, [userId, loadAttempt, queue, applyCloud]);
 
   // Optimistic local state; debounced save to the cloud with a visible error.
   useEffect(() => {
-    if (!ready || !userId || loadedFor.current !== userId || !dirty.current) return;
+    if (!ready || !userId || loadedFor.current !== userId || !queue.dirty) return;
     const t = setTimeout(() => {
-      saveCloudData(data).then(() => { dirty.current = false; }).catch(() => toast.error("Não foi possível salvar. Suas últimas alterações podem não ter sido gravadas."));
+      void queue.flush().catch(() => toast.error("Não foi possível salvar. Suas últimas alterações podem não ter sido gravadas."));
     }, 600);
-    const flush = () => { if (dirty.current) void saveCloudData(data).then(() => { dirty.current = false; }).catch(() => {}); };
+    const flush = () => { void queue.flush().catch(() => {}); };
     const onHide = () => { if (document.visibilityState === "hidden") flush(); };
     window.addEventListener("pagehide", flush); document.addEventListener("visibilitychange", onHide);
     return () => { clearTimeout(t); window.removeEventListener("pagehide", flush); document.removeEventListener("visibilitychange", onHide); };
-  }, [data, ready, userId]);
+  }, [data, ready, userId, queue]);
 
-  const update = useCallback((fn: (d: AppData) => AppData) => { dirty.current = true; setRaw(fn); }, []);
   const setData = update;
+  const refresh = useCallback(() => {
+    if (!userId || queue.dirty || queue.saving) return;
+    const revision = queue.revision;
+    void loadCloudData(userId).then(({ data: cloud }) => {
+      if (!queue.dirty && !queue.saving && queue.revision === revision && loadedFor.current === userId) applyCloud(cloud);
+    }).catch(() => toast.error("Não foi possível atualizar seus dados."));
+  }, [userId, queue, applyCloud]);
   useEffect(() => {
     if (!ready || !userId) return;
-    const refresh = () => {
-      if (dirty.current || document.visibilityState !== "visible") return;
-      void loadCloudData(userId).then(({ data: cloud }) => {
-        if (!dirty.current && loadedFor.current === userId) setRaw(cloud);
-      }).catch(() => {});
-    };
-    const interval = window.setInterval(refresh, 15000);
-    window.addEventListener("focus", refresh);
-    return () => { window.clearInterval(interval); window.removeEventListener("focus", refresh); };
-  }, [ready, userId]);
+    const poll = () => { if (document.visibilityState === "visible") refresh(); };
+    const interval = window.setInterval(poll, 15000);
+    window.addEventListener("focus", poll);
+    return () => { window.clearInterval(interval); window.removeEventListener("focus", poll); };
+  }, [ready, userId, refresh]);
 
   const value = useMemo<Ctx>(() => ({
-    data, ready, setData,
+    data, ready, loadError, setData, flush: () => queue.flush(),
     addAppointment: (a) => update((d) => ({ ...d, appointments: [...d.appointments, { ...a, id: uid(), done: false, createdAt: new Date().toISOString() }] })),
     updateAppointment: (id, patch) => update((d) => ({ ...d, appointments: d.appointments.map((x) => (x.id === id ? { ...x, ...patch } : x)) })),
     removeAppointment: (id) => update((d) => ({ ...d, appointments: d.appointments.filter((x) => x.id !== id) })),
-    addEntry: (e) => update((d) => ({ ...d, entries: [...d.entries, { ...e, id: uid() }] })),
+    addEntry: (e) => {
+      const parsed = entrySchema.safeParse({ ...e, id: uid() });
+      if (!ready || !parsed.success) { toast.error("Informe data, horário e valores válidos."); return false; }
+      update((d) => ({ ...d, entries: [...d.entries, parsed.data] })); return true;
+    },
     removeEntry: (id) => update((d) => ({ ...d, entries: d.entries.filter((x) => x.id !== id) })),
-    addHabit: (h) => update((d) => ({ ...d, habits: [...d.habits, { ...h, id: uid() }] })),
+    addHabit: (h) => {
+      const parsed = habitSchema.safeParse({ ...h, id: uid() });
+      if (!ready || !parsed.success) { toast.error("Informe nome, data e horário válidos."); return false; }
+      update((d) => ({ ...d, habits: [...d.habits, parsed.data] })); return true;
+    },
     removeHabit: (id) => update((d) => ({ ...d, habits: d.habits.filter((x) => x.id !== id) })),
     resetAll: () => update(() => defaultData()),
-    reload: () => { if (userId && !dirty.current) loadCloudData(userId).then(({ data: cloud }) => { if (!dirty.current) setRaw(cloud); }).catch(() => toast.error("Não foi possível atualizar seus dados.")); },
-  }), [data, ready, setData, update, userId]);
+    reload: () => { if (!ready) setLoadAttempt((n) => n + 1); else refresh(); },
+  }), [data, ready, loadError, queue, setData, update, refresh]);
 
   return <StoreCtx.Provider value={value}>{children}</StoreCtx.Provider>;
 }

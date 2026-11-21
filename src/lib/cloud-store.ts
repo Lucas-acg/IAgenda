@@ -4,6 +4,7 @@ import type { AppData } from "./store";
 import { normalizeAppearance } from "./appearance";
 import { validateBackup } from "./backup";
 let loadedAppointmentIds: string[] = [];
+export function acceptCloudData(data: AppData) { loadedAppointmentIds = data.appointments.map((a) => a.id); }
 
 export async function loadCloudData(userId: string): Promise<{ data: AppData; importOffered: boolean }> {
   const results = await Promise.all([
@@ -17,9 +18,8 @@ export async function loadCloudData(userId: string): Promise<{ data: AppData; im
   ]);
   for (const r of results) if (r.error) throw r.error;
   const [profile,prefs,appointments,entries,habits,reminders,importantDays] = results;
-  loadedAppointmentIds = (appointments.data ?? []).map((a) => a.id);
   const profileData = profile.data ?? { user_id: userId, name: "", timezone: "America/Sao_Paulo", height: "", weight: "", wake: "07:00", sleep: "23:00", waterGoal: 8, sleepGoal: 8, legacy_import_offered: false };
-  const prefsData = prefs.data ?? { notifications: false, weekStartsMonday: false, compact: false, palette: "menta", largeText: false, animations: true, showSummary: true, calendarView: "mes" };
+  const prefsData = prefs.data ?? { notifications: false, weekStartsMonday: false, ...normalizeAppearance() };
   return { importOffered: profileData.legacy_import_offered, data: validateBackup({
     profile: profileData, prefs: { ...prefsData, ...normalizeAppearance(prefsData) },
     appointments: appointments.data ?? [],
@@ -32,10 +32,6 @@ export async function saveCloudData(data: AppData) {
   const { data: auth } = await supabase.auth.getUser();
   const userId = auth.user?.id;
   if (!userId) throw new Error("Authentication required");
-  const { error: profileError } = await supabase.from("profiles").upsert({ user_id: userId, ...validated.profile }, { onConflict: "user_id" });
-  if (profileError) throw profileError;
-  const { error: prefsError } = await supabase.from("preferences").upsert({ user_id: userId, ...validated.prefs }, { onConflict: "user_id" });
-  if (prefsError) throw prefsError;
   const { error } = await supabase.rpc("save_iagenda_data", { payload: JSON.parse(JSON.stringify({ ...validated, knownAppointmentIds: loadedAppointmentIds })) as Json });
   if (error) throw error;
   loadedAppointmentIds = validated.appointments.map((a) => a.id);

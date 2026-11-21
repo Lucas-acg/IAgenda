@@ -1,8 +1,8 @@
-import { Check, Palette, RotateCcw, CalendarDays } from "lucide-react";
+import { Palette, RotateCcw, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { DEFAULT_APPEARANCE, PALETTES } from "@/lib/appearance";
+import { DEFAULT_APPEARANCE } from "@/lib/appearance";
 import { useStore, type Prefs } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
@@ -16,14 +16,18 @@ export function AppearanceSettings() {
         <h3 id="appearance-title" className="flex items-center gap-2 font-display text-lg font-semibold"><Palette className="size-5 text-primary" />Aparência</h3>
         <Button variant="ghost" size="icon" className="size-11 shrink-0" title="Restaurar aparência padrão" aria-label="Restaurar aparência padrão" onClick={() => set(DEFAULT_APPEARANCE)}><RotateCcw /></Button>
       </div>
+      <fieldset>
+        <legend className="mb-2 text-sm font-medium">Tema</legend>
+        <div className="segmented-control flex flex-wrap rounded-xl bg-muted p-1">
+          {(["claro", "escuro", "auto"] as const).map((theme) => <Button key={theme} variant="ghost" aria-pressed={p.theme === theme} className={cn("h-11 flex-1 rounded-lg px-3", p.theme === theme ? "bg-card text-foreground shadow-sm hover:bg-card" : "text-muted-foreground")} onClick={() => set({ theme })}>{theme === "claro" ? "Claro" : theme === "escuro" ? "Escuro" : "Automático"}</Button>)}
+        </div>
+      </fieldset>
       <fieldset className="space-y-2">
         <legend className="mb-2 text-sm font-medium">Cor de destaque</legend>
-        <div className="flex flex-wrap gap-3">
-          {PALETTES.map((color) => (
-            <Button key={color.value} variant="outline" className={cn("h-12 gap-2 rounded-xl px-3", p.palette === color.value && "border-primary bg-primary-soft text-sidebar-accent-foreground")} aria-pressed={p.palette === color.value} onClick={() => set({ palette: color.value })}>
-              <span className={cn("grid size-6 shrink-0 place-items-center rounded-full text-primary-foreground", color.swatch)}>{p.palette === color.value && <Check className="size-3.5" />}</span>{color.label}
-            </Button>
-          ))}
+        <div className="flex flex-wrap items-center gap-3">
+          <input aria-label="Cor de destaque" type="color" value={p.accentColor} onChange={(e) => set({ accentColor: e.target.value })} className="size-11 cursor-pointer rounded-lg border border-input bg-card p-1" />
+          <span className="font-mono text-sm">{p.accentColor.toUpperCase()}</span>
+          <Button variant="outline" className="h-11 rounded-xl" onClick={() => set({ accentColor: DEFAULT_APPEARANCE.accentColor })}><RotateCcw className="size-4" />Restaurar</Button>
         </div>
       </fieldset>
       <div className="divide-y border-y">

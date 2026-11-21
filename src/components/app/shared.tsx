@@ -17,7 +17,7 @@ export const HabitIcon = Repeat;
 export const AppointmentIcon = CalendarClock;
 
 const STATUS_STYLE: Record<AppointmentStatus, string> = {
-  futuro: "bg-future/15 text-future", concluido: "bg-done/15 text-done",
+  futuro: "bg-future/15 text-future-foreground", concluido: "bg-done/15 text-done",
   atrasado: "bg-late/15 text-late", expirado: "bg-expired/15 text-expired",
 };
 export const STATUS_BAR: Record<AppointmentStatus, string> = {

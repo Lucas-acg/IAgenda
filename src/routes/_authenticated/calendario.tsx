@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { addDays, addMonths, addWeeks, endOfMonth, endOfWeek, format, isSameMonth, startOfMonth, startOfWeek, getDaysInMonth } from "date-fns";
+import { addDays, addMonths, addWeeks, endOfMonth, endOfWeek, format, isSameMonth, startOfMonth, startOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { recordsOn, toISODate, useStore } from "@/lib/store";
@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/app/shared";
 import { ENTRY_DOT } from "@/components/app/shared";
 import { DayRecords } from "@/components/app/day-records";
 import { cn } from "@/lib/utils";
+import { monthCells } from "@/lib/calendar-math";
 
 export const Route = createFileRoute("/_authenticated/calendario")({
   head: () => ({
@@ -26,7 +27,7 @@ export const Route = createFileRoute("/_authenticated/calendario")({
 
 function Calendario() {
   const { data } = useStore();
-  const [view, setView] = useState<"mes" | "semana" | "ano">("mes");
+  const [view, setView] = useState<"mes" | "semana" | "ano">(data.prefs.calendarView);
   const [cursor, setCursor] = useState(() => new Date());
   const [selected, setSelected] = useState(() => toISODate(new Date()));
   const ws = data.prefs.weekStartsMonday ? 1 : 0;
@@ -58,8 +59,8 @@ function Calendario() {
             {Array.from({ length: 12 }, (_, month) => {
               const monthDate = new Date(cursor.getFullYear(), month, 1);
               const first = startOfWeek(monthDate, { weekStartsOn: ws });
-              const cells = Array.from({ length: Math.ceil((monthDate.getDay() - ws + getDaysInMonth(monthDate)) / 7) * 7 }, (_, i) => addDays(first, i));
-              return <section key={month} className="rounded-2xl border p-3"><button className="mb-2 font-semibold capitalize text-primary" onClick={() => { setCursor(monthDate); setView("mes"); }}>{format(monthDate, "MMMM", { locale: ptBR })}</button><div className="grid grid-cols-7 text-center text-[10px] text-muted-foreground">{["D","S","T","Q","Q","S","S"].map((d,i)=><span key={i}>{d}</span>)}</div><div className="grid grid-cols-7 text-center text-xs">{cells.map((d,i)=>{ const iso=toISODate(d); const important=data.importantDays.some(x=>x.date===iso.slice(5)); return <button key={i} onClick={()=>{setSelected(iso);setCursor(monthDate)}} aria-label={`${iso}${important?", data importante":""}`} className={cn("m-0.5 grid aspect-square place-items-center rounded-full", !isSameMonth(d,monthDate)&&"opacity-25", iso===today&&"bg-primary text-primary-foreground", important&&"ring-2 ring-accent")}>{d.getDate()}</button>; })}</div></section>;
+               const cells = monthCells(monthDate, ws);
+              return <section key={month} className="rounded-2xl border p-3"><button className="mb-2 font-semibold capitalize text-primary" onClick={() => { setCursor(monthDate); setView("mes"); }}>{format(monthDate, "MMMM", { locale: ptBR })}</button><div className="grid grid-cols-7 text-center text-[10px] text-muted-foreground">{Array.from({ length: 7 }, (_, i) => <span key={i}>{format(addDays(first, i), "EEEEE", { locale: ptBR })}</span>)}</div><div className="grid grid-cols-7 text-center text-xs">{cells.map((d,i)=>{ const iso=toISODate(d); const important=data.importantDays.some(x=>x.date===iso.slice(5)); return <button key={i} onClick={()=>{setSelected(iso);setCursor(monthDate)}} aria-label={`${iso}${important?", data importante":""}`} className={cn("m-0.5 grid aspect-square place-items-center rounded-full", !isSameMonth(d,monthDate)&&"opacity-25", iso===today&&"bg-primary text-primary-foreground", important&&"ring-2 ring-accent")}>{d.getDate()}</button>; })}</div></section>;
             })}
           </div> : <>
           <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold uppercase text-muted-foreground">

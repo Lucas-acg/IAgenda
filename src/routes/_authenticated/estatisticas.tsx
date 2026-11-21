@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, TrendingDown, TrendingUp, Minus } from "lucide-react";
-import { addDays, format, startOfMonth, startOfWeek, startOfYear, subMonths, subWeeks, subYears, getDaysInMonth } from "date-fns";
+import { addDays, format, startOfMonth, startOfYear, subMonths, subYears, getDaysInMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -10,6 +10,8 @@ import { ENTRY_FILL, PageHeader, Section } from "@/components/app/shared";
 import { DayRecords } from "@/components/app/day-records";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import { appointmentHasPassed } from "@/lib/calendar-math";
+import { comparisonPeriods, dailyWaterAverage } from "@/lib/statistics-math";
 
 export const Route = createFileRoute("/_authenticated/estatisticas")({
   head: () => ({
@@ -43,9 +45,9 @@ function Estatisticas() {
   const fromIso = toISODate(from);
 
   const inPeriod = useMemo(() => ({
-    entries: data.entries.filter((e) => e.date >= fromIso),
-    habits: data.habits.filter((h) => h.date >= fromIso),
-    appts: data.appointments.filter((a) => a.date >= fromIso && a.date <= toISODate(now)),
+    entries: data.entries.filter((e) => e.date >= fromIso && e.date <= toISODate(now)),
+    habits: data.habits.filter((h) => h.date >= fromIso && h.date <= toISODate(now)),
+    appts: data.appointments.filter((a) => a.date >= fromIso && a.date <= toISODate(now) && appointmentHasPassed(a, now)),
   }), [data, fromIso]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const byType = (Object.keys(ENTRY_LABEL) as EntryType[]).map((t) => ({ key: t, label: ENTRY_LABEL[t], value: inPeriod.entries.filter((e) => e.type === t).length, fill: ENTRY_FILL[t] }));
@@ -65,7 +67,7 @@ function Estatisticas() {
       for (let i = 11; i >= 0; i--) {
         const m = subMonths(startOfMonth(now), i); const key = format(m, "yyyy-MM");
         const sl = data.entries.filter((e) => e.type === "sono" && e.date.startsWith(key) && e.value);
-        const days = new Set(data.entries.filter((e) => e.type === "agua" && e.date.startsWith(key)).map((e) => e.date)).size || 1;
+        const days = i === 0 ? now.getDate() : getDaysInMonth(m);
         pts.push({ label: format(m, "MMM", { locale: ptBR }), sleep: sl.length ? sl.reduce((s, e) => s + (e.value ?? 0), 0) / sl.length : null,
           water: data.entries.filter((e) => e.type === "agua" && e.date.startsWith(key)).reduce((s, e) => s + (e.value ?? 1), 0) / days });
       }
@@ -74,14 +76,13 @@ function Estatisticas() {
   }, [data, period, fromIso]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const ws = data.prefs.weekStartsMonday ? 1 : 0;
-  const weekStart = startOfWeek(now, { weekStartsOn: ws });
+  const { week, month } = comparisonPeriods(now, ws);
   const comps = [
-    { l: "Esta semana", cur: countBetween(data, weekStart, addDays(now, 1)), prev: countBetween(data, subWeeks(weekStart, 1), weekStart), ref: "semana passada" },
-    { l: "Este mês", cur: countBetween(data, startOfMonth(now), addDays(now, 1)), prev: countBetween(data, subMonths(startOfMonth(now), 1), startOfMonth(now)), ref: "mês passado" },
+    { l: "Esta semana", cur: countBetween(data, week.current, week.currentEnd), prev: countBetween(data, week.previous, week.previousEnd), ref: "semana passada" },
+    { l: "Este mês", cur: countBetween(data, month.current, month.currentEnd), prev: countBetween(data, month.previous, month.previousEnd), ref: "mês passado" },
     { l: "Este ano", cur: countBetween(data, startOfYear(now), addDays(now, 1)), prev: countBetween(data, subYears(startOfYear(now), 1), startOfYear(now)), ref: "ano passado" },
   ];
   const sleepVals = inPeriod.entries.filter((e) => e.type === "sono" && e.value).map((e) => e.value ?? 0);
-  const waterDays = new Set(inPeriod.entries.filter((e) => e.type === "agua").map((e) => e.date)).size;
   const waterTotal = inPeriod.entries.filter((e) => e.type === "agua").reduce((s, e) => s + (e.value ?? 1), 0);
   const doneRate = inPeriod.appts.length ? Math.round((inPeriod.appts.filter((a) => a.done).length / inPeriod.appts.length) * 100) : null;
 
@@ -97,7 +98,7 @@ function Estatisticas() {
 
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Kpi label="Sono médio" value={sleepVals.length ? `${(sleepVals.reduce((a, b) => a + b, 0) / sleepVals.length).toFixed(1)}h` : "–"} hint={`meta ${data.profile.sleepGoal}h`} />
-        <Kpi label="Água por dia" value={waterDays ? `${(waterTotal / waterDays).toFixed(1)}` : "–"} hint={`meta ${data.profile.waterGoal} copos`} />
+        <Kpi label="Água por dia" value={`${dailyWaterAverage(waterTotal, period).toFixed(1)}`} hint={`meta ${data.profile.waterGoal} copos`} />
         <Kpi label="Hábitos feitos" value={String(inPeriod.habits.length)} hint="no período" />
         <Kpi label="Compromissos concluídos" value={doneRate === null ? "–" : `${doneRate}%`} hint={`${inPeriod.appts.length} no período`} />
       </div>

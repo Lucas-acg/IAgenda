@@ -4,8 +4,10 @@ import { deleteMyAccount } from "@/lib/account.functions";
 import { validateBackup } from "@/lib/backup";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, type ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { appointmentHasPassed } from "@/lib/calendar-math";
 import { User, CalendarRange, CalendarDays, Cake, BellRing, SlidersHorizontal, ChevronRight, ChevronLeft, Plus, Trash2, Download, Upload } from "lucide-react";
-import { addDays, format, startOfMonth, startOfWeek, endOfMonth } from "date-fns";
+import { addDays, format, startOfMonth, startOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -48,11 +50,17 @@ type Key = (typeof SECTIONS)[number]["k"];
 
 function AccountActions() {
   const navigate = useNavigate();
+  const { flush } = useStore();
+  const queryClient = useQueryClient();
+  const [busy, setBusy] = useState(false);
   return (
     <div className="grid gap-2 sm:flex">
-      <Button variant="ghost" className="h-11 rounded-xl text-destructive" onClick={async () => {
+      <Button disabled={busy} variant="ghost" className="h-11 rounded-xl text-destructive" onClick={async () => {
+        setBusy(true);
+        try { await flush(); } catch { toast.error("Não foi possível salvar suas alterações. Tente sair novamente."); setBusy(false); return; }
+        await queryClient.cancelQueries(); queryClient.clear();
         const { error } = await supabase.auth.signOut();
-        if (error) { toast.error("Não foi possível sair. Tente novamente."); return; }
+        if (error) { toast.error("Não foi possível sair. Tente novamente."); setBusy(false); return; }
         await navigate({ to: "/auth", replace: true });
       }}><LogOut className="size-4" />Sair</Button>
     </div>
@@ -163,7 +171,7 @@ function ProfileForm() {
       <F id="pf-water" label="Meta de água (copos/dia)"><Input id="pf-water" type="number" min={1} className={inp} value={p.waterGoal} onChange={(e) => set({ waterGoal: Number(e.target.value) || 1 })} /></F>
       <F id="pf-sg" label="Meta de sono (horas)"><Input id="pf-sg" type="number" min={1} step={0.5} className={inp} value={p.sleepGoal} onChange={(e) => set({ sleepGoal: Number(e.target.value) || 1 })} /></F>
       {p.weight && <p className="text-sm text-muted-foreground sm:col-span-2">Sugestão de hidratação pelo peso: ~{Math.round((Number(p.weight) * 35) / 250)} copos de 250 ml por dia.</p>}
-      <p className="text-xs text-muted-foreground sm:col-span-2">Alterações são salvas automaticamente neste aparelho.</p>
+      <p className="text-xs text-muted-foreground sm:col-span-2">Alterações são salvas automaticamente na sua conta.</p>
     </div>
   );
 }
@@ -172,12 +180,12 @@ function Report({ kind }: { kind: "semanal" | "mensal" }) {
   const { data } = useStore();
   const now = new Date();
   const from = kind === "semanal" ? addDays(now, -6) : startOfMonth(now);
-  const to = kind === "semanal" ? now : endOfMonth(now);
+  const to = now;
   const a = toISODate(from), b = toISODate(to);
   const inR = (d: string) => d >= a && d <= b;
   const entries = data.entries.filter((e) => inR(e.date));
   const habits = data.habits.filter((h) => inR(h.date));
-  const appts = data.appointments.filter((x) => inR(x.date));
+  const appts = data.appointments.filter((x) => inR(x.date) && appointmentHasPassed(x, now));
   const done = appts.filter((x) => x.done).length;
   const missed = appts.filter((x) => appointmentStatus(x) === "expirado" || appointmentStatus(x) === "atrasado").length;
   const sleep = entries.filter((e) => e.type === "sono" && e.value);
@@ -278,6 +286,7 @@ function Reminders() {
 
 function Preferences() {
   const { data, setData, resetAll } = useStore();
+  const [pendingBackup, setPendingBackup] = useState<AppData | null>(null);
   const setP = (patch: Partial<AppData["prefs"]>) => setData((d) => ({ ...d, prefs: { ...d.prefs, ...patch } }));
   const toggleNotif = async (v: boolean) => {
     if (v) {
@@ -293,7 +302,7 @@ function Preferences() {
     const url = URL.createObjectURL(blob); const a = document.createElement("a");
     a.href = url; a.download = `iagenda-backup-${toISODate(new Date())}.json`; a.click(); URL.revokeObjectURL(url);
   };
-  const importData = (file: File) => file.text().then((t) => { try { const parsed = JSON.parse(t) as Partial<AppData>; const base = defaultData(); const restored = validateBackup({ ...base, ...parsed, profile: { ...base.profile, ...parsed.profile }, prefs: { ...base.prefs, ...parsed.prefs, ...normalizeAppearance(parsed.prefs) } }); setData(() => restored); toast.success("Backup restaurado"); } catch { toast.error("Arquivo de backup inválido."); } });
+  const importData = (file: File) => file.text().then((t) => { try { const parsed = JSON.parse(t) as Partial<AppData>; const base = defaultData(); const restored = validateBackup({ ...base, ...parsed, profile: { ...base.profile, ...parsed.profile }, prefs: { ...base.prefs, ...parsed.prefs, ...normalizeAppearance(parsed.prefs) } }); setPendingBackup(restored); } catch { toast.error("Arquivo de backup inválido."); } }).catch(() => toast.error("Não foi possível ler o arquivo."));
   const Row = ({ id, title, desc, children }: { id: string; title: string; desc: string; children: ReactNode }) => (
     <div className="flex items-center justify-between gap-4 border-b py-4"><div className="min-w-0"><Label htmlFor={id} className="font-semibold">{title}</Label><p className="text-sm text-muted-foreground">{desc}</p></div><div className="shrink-0">{children}</div></div>
   );
@@ -305,7 +314,7 @@ function Preferences() {
       <div className="grid gap-2 pt-2 sm:grid-cols-3">
         <Button variant="outline" className="h-11 rounded-xl" onClick={exportData}><Download className="size-4" />Exportar backup</Button>
         <Button variant="outline" className="h-11 rounded-xl" asChild>
-          <label htmlFor="pr-import" className="cursor-pointer"><Upload className="size-4" />Importar backup<input id="pr-import" type="file" accept="application/json" className="sr-only" onChange={(e) => e.target.files?.[0] && importData(e.target.files[0])} /></label>
+          <label htmlFor="pr-import" className="cursor-pointer"><Upload className="size-4" />Importar backup<input id="pr-import" type="file" accept="application/json" className="sr-only" onChange={(e) => { const file = e.target.files?.[0]; e.target.value = ""; if (file) void importData(file); }} /></label>
         </Button>
         <AlertDialog>
           <AlertDialogTrigger asChild><Button variant="outline" className="h-11 rounded-xl text-destructive hover:text-destructive"><Trash2 className="size-4" />Apagar tudo</Button></AlertDialogTrigger>
@@ -315,6 +324,16 @@ function Preferences() {
           </AlertDialogContent>
         </AlertDialog>
       </div>
+      <AlertDialog open={pendingBackup !== null} onOpenChange={(open) => { if (!open) setPendingBackup(null); }}>
+        <AlertDialogContent className="rounded-3xl">
+          <AlertDialogHeader><AlertDialogTitle>Restaurar este backup?</AlertDialogTitle><AlertDialogDescription>
+            O arquivo contém {pendingBackup ? pendingBackup.appointments.length + pendingBackup.entries.length + pendingBackup.habits.length + pendingBackup.reminders.length + pendingBackup.importantDays.length : 0} registros:
+            {pendingBackup && ` ${pendingBackup.appointments.length} compromissos, ${pendingBackup.entries.length} acontecimentos, ${pendingBackup.habits.length} hábitos, ${pendingBackup.reminders.length} lembretes e ${pendingBackup.importantDays.length} dias importantes.`}
+            {" "}Todos os dados e preferências atuais serão substituídos.
+          </AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel className="h-11 rounded-xl">Cancelar</AlertDialogCancel><AlertDialogAction className="h-11 rounded-xl" onClick={() => { if (!pendingBackup) return; setData(() => pendingBackup); setPendingBackup(null); toast.success("Backup restaurado"); }}>Restaurar backup</AlertDialogAction></AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <p className="pt-2 text-xs text-muted-foreground">Seus dados ficam guardados na sua conta e aparecem em qualquer aparelho em que você entrar.</p>
     </div>
   );

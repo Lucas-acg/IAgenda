@@ -41,6 +41,7 @@
   --color-other: var(--other);
   --color-habit: var(--habit);
   --color-future: var(--future);
+  --color-future-foreground: var(--primary-readable);
   --color-late: var(--late);
   --color-done: var(--done);
   --color-expired: var(--expired);
@@ -74,7 +75,7 @@
   --card-foreground: oklch(0.27 0.03 220);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.27 0.03 220);
-  --primary: oklch(0.6 0.11 180);
+   --primary: #007d6b;
   --primary-foreground: oklch(0.99 0.005 180);
   --primary-soft: oklch(0.94 0.04 180);
   --secondary: oklch(0.95 0.015 180);
@@ -126,7 +127,7 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
   }
-  h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.01em; }
+  h1, h2, h3 { font-family: var(--font-display); letter-spacing: 0; }
 }
 
 @utility card-soft {
@@ -142,4 +143,100 @@
 @keyframes fade-up {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: none; }
+}
+
+/* Theme surfaces share the chosen accent without recoloring semantic categories. */
+:root {
+  --surface-base: #ffffff;
+  --surface-background: #f8faf9;
+  --surface-muted: #f1f4f3;
+  --surface-border: #dce3e1;
+  --surface-input: #d2dcd9;
+  --primary-foreground: #ffffff;
+  --primary-readable: color-mix(in oklab, var(--primary) 55%, #000000);
+  --background: color-mix(in oklab, var(--primary) 3%, var(--surface-background));
+  --secondary: color-mix(in oklab, var(--primary) 4%, var(--surface-muted));
+  --muted: color-mix(in oklab, var(--primary) 3%, var(--surface-muted));
+  --border: color-mix(in oklab, var(--primary) 5%, var(--surface-border));
+  --input: color-mix(in oklab, var(--primary) 5%, var(--surface-input));
+  --primary-soft: color-mix(in oklab, var(--primary) 10%, var(--surface-base));
+  --ring: var(--primary);
+  --future: var(--primary);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--primary-soft);
+  --sidebar-accent-foreground: var(--primary-readable);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+  --pixel-0: color-mix(in oklab, var(--primary) 5%, var(--surface-muted));
+  --pixel-1: color-mix(in oklab, var(--primary) 20%, var(--surface-base));
+  --pixel-2: color-mix(in oklab, var(--primary) 40%, var(--surface-base));
+  --pixel-3: color-mix(in oklab, var(--primary) 65%, var(--surface-base));
+  --pixel-4: var(--primary);
+  --chart-1: var(--primary);
+  --card-padding: 1rem;
+  --card-padding-lg: 1.25rem;
+  --list-padding: .75rem;
+  --list-gap: .75rem;
+}
+
+:root.dark {
+  --surface-base: #202728;
+  --surface-background: #14191a;
+  --surface-muted: #293132;
+  --surface-border: #414b4c;
+  --surface-input: #505b5c;
+  --foreground: #ecf2f0;
+  --card: var(--surface-base);
+  --card-foreground: var(--foreground);
+  --popover: #252d2e;
+  --popover-foreground: var(--foreground);
+  --secondary-foreground: #e0e9e6;
+  --muted-foreground: #aebbb7;
+  --accent: #463733;
+  --accent-foreground: #f2c1a7;
+  --primary-readable: color-mix(in oklab, var(--primary) 40%, #ffffff);
+  --primary-soft: color-mix(in oklab, var(--primary) 18%, var(--surface-base));
+  --ring: var(--primary-readable);
+  --sidebar: var(--surface-base);
+  --sidebar-foreground: var(--foreground);
+  --pixel-0: color-mix(in oklab, var(--primary) 5%, var(--surface-muted));
+  --shadow-soft: 0 1px 2px #00000040, 0 8px 24px -12px #00000080;
+  --shadow-fab: 0 10px 24px -8px color-mix(in oklab, var(--primary) 40%, #000000);
+}
+
+:root[data-text="large"] { font-size: 112.5%; }
+:root[data-density="compact"] {
+  --card-padding: .75rem;
+  --card-padding-lg: 1rem;
+  --list-padding: .5rem;
+  --list-gap: .5rem;
+}
+:root[data-density="compact"] .card-soft.p-4 { padding: var(--card-padding); }
+:root[data-density="compact"] .card-soft.p-3 { padding: var(--list-padding); }
+:root[data-density="compact"] .app-content ul > li.p-3 { padding: var(--list-padding); }
+:root[data-density="compact"] .app-content ul.space-y-2 > :not(:last-child),
+:root[data-density="compact"] .app-content ul.space-y-3 > :not(:last-child) { margin-block-end: var(--list-gap); }
+:root[data-density="compact"] .app-content .gap-6 { gap: 1rem; }
+@media (min-width: 768px) {
+  :root[data-density="compact"] .card-soft.md\:p-4 { padding: var(--card-padding); }
+  :root[data-density="compact"] .card-soft.md\:p-5,
+  :root[data-density="compact"] .card-soft.p-5 { padding: var(--card-padding-lg); }
+}
+.dark .text-primary { color: var(--primary-readable); }
+:root[data-motion="off"] *, :root[data-motion="off"] *::before, :root[data-motion="off"] *::after {
+  animation-duration: .01ms !important;
+  animation-delay: 0ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: .01ms !important;
+  scroll-behavior: auto !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

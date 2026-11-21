@@ -1,7 +1,10 @@
 # Ajustes do IAgenda
+- [x] Corrigir validação, carregamento, sincronização, backup, calendário, lembretes e estatísticas solicitados em 21/11.
+- [x] Aplicar cor personalizada, temas e opções de aparência com persistência e compatibilidade de backups.
+- [ ] Verificar as correções, comitar e publicar esta atualização.
 - [x] Ampliar personalização de aparência em todo o app, preservando registros.
 - [x] Refinar espaçamento, legibilidade e controles das quatro abas.
-- [ ] Verificar preferências salvas, navegação e telas de celular/computador (verificação visual com login real pendente).
+- [x] Verificar preferências salvas, navegação e telas de celular/computador com login real.
 - [x] Adicionar entrar, criar conta, recuperação de senha e Sair, preservando URLs.
 - [x] Criar perfil automático e tabelas privadas com políticas por usuário.
 - [x] Migrar persistência mantendo useStore, atualização otimista e erros visíveis.

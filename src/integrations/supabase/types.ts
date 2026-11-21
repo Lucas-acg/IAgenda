@@ -174,6 +174,7 @@ export type Database = {
       }
       preferences: {
         Row: {
+          accentColor: string
           animations: boolean
           calendarView: string
           compact: boolean
@@ -181,10 +182,12 @@ export type Database = {
           notifications: boolean
           palette: string
           showSummary: boolean
+          theme: string
           user_id: string
           weekStartsMonday: boolean
         }
         Insert: {
+          accentColor?: string
           animations?: boolean
           calendarView?: string
           compact?: boolean
@@ -192,10 +195,12 @@ export type Database = {
           notifications?: boolean
           palette?: string
           showSummary?: boolean
+          theme?: string
           user_id: string
           weekStartsMonday?: boolean
         }
         Update: {
+          accentColor?: string
           animations?: boolean
           calendarView?: string
           compact?: boolean
@@ -203,6 +208,7 @@ export type Database = {
           notifications?: boolean
           palette?: string
           showSummary?: boolean
+          theme?: string
           user_id?: string
           weekStartsMonday?: boolean
         }

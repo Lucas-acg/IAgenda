@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { useAdd } from "./add-flow";
 import { nowTime, parseISODate, toISODate, useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import { APPEARANCE_KEY, applyAppearance } from "@/lib/appearance";
+import { appointmentNoticeKey } from "@/lib/calendar-math";
 
 const NAV = [
   { to: "/", label: "Compromissos", icon: ListChecks },
@@ -19,17 +21,18 @@ const DESKTOP_NAV = NAV;
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { open } = useAdd();
-  const { data, ready } = useStore();
+  const { data, ready, loadError, reload } = useStore();
   const path = useRouterState({ select: (s) => s.location.pathname });
   useReminderNotifications();
   const initials = (data.profile.name || "Você").split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
   useEffect(() => {
     if (!ready) return;
-    const root = document.documentElement;
-    root.dataset["palette"] = data.prefs.palette;
-    root.dataset["density"] = data.prefs.compact ? "compact" : "comfortable";
-    root.dataset["text"] = data.prefs.largeText ? "large" : "standard";
-    root.dataset["motion"] = data.prefs.animations ? "on" : "off";
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const apply = () => applyAppearance(data.prefs, media.matches);
+    apply();
+    try { localStorage.setItem(APPEARANCE_KEY, JSON.stringify(data.prefs)); } catch { /* storage unavailable */ }
+    media.addEventListener("change", apply);
+    return () => media.removeEventListener("change", apply);
   }, [data.prefs, ready]);
 
   return (
@@ -40,7 +43,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <span className="grid size-10 place-items-center rounded-xl bg-primary text-primary-foreground"><CalendarHeart className="size-5" aria-hidden /></span>
           <span className="hidden font-display text-xl font-bold lg:block">IAgenda</span>
         </Link>
-        <Button onClick={() => open()} className="mb-5 h-11 rounded-xl shadow-[var(--shadow-fab)]" aria-label="Adicionar registro">
+        <Button disabled={!ready} onClick={() => open()} className="mb-5 h-11 rounded-xl shadow-[var(--shadow-fab)]" aria-label="Adicionar registro">
           <Plus className="size-5" /> <span className="hidden lg:inline">Adicionar</span>
         </Button>
         <nav className="flex flex-1 flex-col gap-1" aria-label="Principal">
@@ -65,7 +68,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       <main className="app-content min-w-0 flex-1 px-4 pb-[calc(env(safe-area-inset-bottom)+6.5rem)] pt-[calc(env(safe-area-inset-top)+1.25rem)] md:px-8 md:pb-10 md:pt-8 lg:px-12">
-        <div className="mx-auto max-w-6xl">{children}</div>
+        <div className="mx-auto max-w-6xl">{loadError ? <div role="alert" className="space-y-4 py-10 text-center"><p className="font-semibold">Não foi possível carregar</p><Button className="h-11" onClick={reload}>Tentar de novo</Button></div> : ready ? children : <div aria-label="Carregando" className="space-y-3">{[0, 1, 2].map((i) => <div key={i} className="h-16 animate-pulse rounded-2xl bg-muted" />)}</div>}</div>
       </main>
 
       {/* Mobile bottom nav */}
@@ -73,7 +76,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="mx-auto grid h-16 max-w-md grid-cols-5 items-center px-1">
           {[NAV[0], NAV[1]].map((n) => <MobileTab key={n.to} {...n} path={path} />)}
           <div className="flex justify-center">
-            <Button size="icon" onClick={() => open()} aria-label="Adicionar registro"
+            <Button disabled={!ready} size="icon" onClick={() => open()} aria-label="Adicionar registro"
               className="-mt-7 grid size-14 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-[var(--shadow-fab)] transition active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/40">
               <Plus className="size-7" aria-hidden />
             </Button>
@@ -137,8 +140,8 @@ function useReminderNotifications() {
         const [h = 0, m = 0] = a.time.split(":").map(Number);
         const start = a.id.startsWith("wa-") ? new Date(`${a.date}T${a.time}:00-03:00`) : parseISODate(a.date);
         if (!a.id.startsWith("wa-")) start.setHours(h, m, 0, 0);
-        if (a.reminder > 0) { const before = new Date(start.getTime() - a.reminder * 60_000); if (due(before)) notify(`a-${a.id}-pre`, a.title, `Começa às ${a.time} — ${dateLabel(a.date)}`); }
-        if (due(start)) notify(`a-${a.id}`, a.title, `Agora, às ${a.time}`);
+        if (a.reminder > 0) { const before = new Date(start.getTime() - a.reminder * 60_000); if (due(before)) notify(appointmentNoticeKey(a, true), a.title, `Começa às ${a.time} — ${dateLabel(a.date)}`); }
+        if (due(start)) notify(appointmentNoticeKey(a), a.title, `Agora, às ${a.time}`);
       });
       if (t >= "08:00") data.importantDays.filter((d) => d.notify && d.date === today.slice(5)).forEach((d) => notify(`d-${d.id}-${today}`, "Dia importante hoje", d.name));
     };

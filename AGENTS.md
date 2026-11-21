@@ -32,6 +32,9 @@ use the editor.
 ## App presentation
 - Keep appearance defaults and validation in `src/lib/appearance.ts`; merge them into existing preferences on load and backup restore to preserve older records.
 - Apply appearance preferences through document data attributes and global semantic tokens so dialogs, charts, navigation, and pages share the same presentation.
+- Normalize legacy colors in the appearance module and apply its shared pre-paint/live theme logic; this prevents flashes and keeps old backups compatible.
+- Serialize cloud saves with revision tracking and accept cloud baselines only with accepted reads; this preserves edits made during requests and safely flushes before sign-out.
+- Keep date-grid and elapsed-time rules in small pure helpers shared with regression tests; this avoids divergent calendar and report calculations.
 
 ## Data and integrations
 - `StoreProvider` lives only inside the `_authenticated` layout and syncs to the cloud through `src/lib/cloud-store.ts`; the root route only mounts `AuthProvider`, so public pages never load user data.
