@@ -136,8 +136,3 @@ export async function processPending(db: Db, limit = 5) {
     if (releaseError) throw releaseError;
   }
 }
-export async function analyzePendingMessages(db: Db, userId: string, limit = 20) {
-  const { data, error } = await db.from("wa_assistant_messages").select("id").eq("user_id", userId).eq("state", "pending").limit(limit); if (error) throw error;
-  // Recovery is triggered by signed webhooks or the protected worker, never by page views.
-  return data?.length ?? 0;
-}

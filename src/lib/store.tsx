@@ -4,8 +4,10 @@ import { toast } from "sonner";
 import { DEFAULT_APPEARANCE, normalizeAppearance, type AppearancePrefs } from "./appearance";
 import { useAuth } from "@/components/app/auth-provider";
 import { acceptCloudData, loadCloudData, markImportOffered, saveCloudData } from "./cloud-store";
-import { entrySchema, habitSchema, validateBackup } from "./backup";
+import { entrySchema, habitSchema, habitRoutineSchema, validateBackup } from "./backup";
 import { createPendingSave } from "./pending-save";
+import { habitNameKey, routineDue, validHabitDate, type HabitRoutine } from "./habit-routines";
+export type { HabitRoutine } from "./habit-routines";
 
 export type Category = "trabalho" | "saude" | "estudos" | "pessoal" | "social" | "outro";
 export type EntryType = "sono" | "alimentacao" | "exercicio" | "agua" | "outro";
@@ -19,30 +21,30 @@ export interface Entry {
   id: string; type: EntryType; date: string; time: string; note: string;
   value?: number | undefined; quality?: "ruim" | "ok" | "boa" | undefined;
 }
-export interface HabitLog { id: string; name: string; kind: "recorrente" | "pontual"; date: string; time: string; note: string; }
+export interface HabitLog { id: string; name: string; kind: "recorrente" | "pontual"; date: string; time: string; note: string; routine_id?: string | null | undefined; }
 export interface DailyReminder { id: string; name: string; time: string; active: boolean; }
 export interface ImportantDay { id: string; name: string; date: string; notify: boolean; }
 export interface Profile {
-  name: string; height: string; weight: string; wake: string; sleep: string;
+  name: string; avatarPath: string; height: string; weight: string; wake: string; sleep: string;
   waterGoal: number; sleepGoal: number;
 }
 export interface Prefs extends AppearancePrefs { notifications: boolean; weekStartsMonday: boolean; }
 
 export interface AppData {
-  appointments: Appointment[]; entries: Entry[]; habits: HabitLog[];
+  appointments: Appointment[]; entries: Entry[]; habits: HabitLog[]; habitRoutines: HabitRoutine[];
   reminders: DailyReminder[]; importantDays: ImportantDay[]; profile: Profile; prefs: Prefs;
 }
 
 const KEY = "iagenda:v1";
 
 export const defaultData = (): AppData => ({
-  appointments: [], entries: [], habits: [],
+  appointments: [], entries: [], habits: [], habitRoutines: [],
   reminders: [
     { id: uid(), name: "Beber água", time: "10:00", active: true },
     { id: uid(), name: "Alongar", time: "16:00", active: false },
   ],
   importantDays: [],
-  profile: { name: "", height: "", weight: "", wake: "07:00", sleep: "23:00", waterGoal: 8, sleepGoal: 8 },
+  profile: { name: "", avatarPath: "", height: "", weight: "", wake: "07:00", sleep: "23:00", waterGoal: 8, sleepGoal: 8 },
   prefs: { notifications: false, weekStartsMonday: false, ...DEFAULT_APPEARANCE },
 });
 
@@ -87,6 +89,9 @@ interface Ctx {
   removeEntry: (id: string) => void;
   addHabit: (h: Omit<HabitLog, "id">) => boolean;
   removeHabit: (id: string) => void;
+  saveRoutine: (r: Omit<HabitRoutine, "id">, id?: string) => boolean;
+  removeRoutine: (id: string) => void;
+  toggleRoutine: (id: string, date: string) => void;
   resetAll: () => void;
   /** Re-reads data from the cloud (e.g. after appointments created from WhatsApp). */
   reload: () => void;
@@ -143,6 +148,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
               appointments: [...d.appointments, ...legacy.appointments.filter((x) => !d.appointments.some((y) => y.id === x.id))],
               entries: [...d.entries, ...legacy.entries.filter((x) => !d.entries.some((y) => y.id === x.id))],
               habits: [...d.habits, ...legacy.habits.filter((x) => !d.habits.some((y) => y.id === x.id))],
+               habitRoutines: [...d.habitRoutines, ...legacy.habitRoutines.filter((x) => !d.habitRoutines.some((y) => y.id === x.id || habitNameKey(y.name) === habitNameKey(x.name)))],
               importantDays: [...d.importantDays, ...legacy.importantDays.filter((x) => !d.importantDays.some((y) => y.id === x.id))],
             };
             latest.current = next; queue.edit(next); setRaw(next);
@@ -197,10 +203,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     removeEntry: (id) => update((d) => ({ ...d, entries: d.entries.filter((x) => x.id !== id) })),
     addHabit: (h) => {
       const parsed = habitSchema.safeParse({ ...h, id: uid() });
-      if (!ready || !parsed.success) { toast.error("Informe nome, data e horário válidos."); return false; }
+      if (!ready || !parsed.success || !validHabitDate(e.date, toISODate(new Date())) || (e.routine_id && !latest.current.habitRoutines.some((r) => r.id === e.routine_id))) { toast.error("Informe nome, data e horário válidos, sem data futura."); return false; }
       update((d) => ({ ...d, habits: [...d.habits, parsed.data] })); return true;
     },
     removeHabit: (id) => update((d) => ({ ...d, habits: d.habits.filter((x) => x.id !== id) })),
+    saveRoutine: (r, id) => {
+      const parsed = habitRoutineSchema.safeParse({ ...r, id: id ?? uid() });
+      if (!ready || !parsed.success) { toast.error("Informe o nome e ao menos um dia da semana."); return false; }
+      if (latest.current.habitRoutines.some((x) => x.id !== id && habitNameKey(x.name) === habitNameKey(parsed.data.name))) { toast.error("Já existe uma rotina com esse nome."); return false; }
+      update((d) => ({ ...d, habitRoutines: id ? d.habitRoutines.map((x) => x.id === id ? parsed.data : x) : [...d.habitRoutines, parsed.data] }));
+      return true;
+    },
+    removeRoutine: (id) => update((d) => ({ ...d, habitRoutines: d.habitRoutines.filter((r) => r.id !== id), habits: d.habits.map((h) => h.routine_id === id ? { ...h, routine_id: null } : h) })),
+    toggleRoutine: (id, date) => update((d) => {
+      const r = d.habitRoutines.find((x) => x.id === id);
+      if (!r || !validHabitDate(date, toISODate(new Date())) || !routineDue(r, date)) return d;
+      const done = d.habits.some((h) => h.routine_id === id && h.date === date);
+      return { ...d, habits: done ? d.habits.filter((h) => !(h.routine_id === id && h.date === date)) : [...d.habits, { id: uid(), name: r.name, kind: "recorrente", date, time: nowTime(), note: "", routine_id: id }] };
+    }),
     resetAll: () => update(() => defaultData()),
     reload: () => { if (!ready) setLoadAttempt((n) => n + 1); else refresh(); },
   }), [data, ready, loadError, queue, setData, update, refresh]);

@@ -102,6 +102,38 @@ export type Database = {
           },
         ]
       }
+      habit_routines: {
+        Row: {
+          active: boolean
+          days: number[]
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          days?: number[]
+          id: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          days?: number[]
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "habit_routines_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       habits: {
         Row: {
           date: string
@@ -109,6 +141,7 @@ export type Database = {
           kind: string
           name: string
           note: string
+          routine_id: string | null
           time: string
           user_id: string
         }
@@ -118,6 +151,7 @@ export type Database = {
           kind: string
           name: string
           note?: string
+          routine_id?: string | null
           time: string
           user_id: string
         }
@@ -127,10 +161,18 @@ export type Database = {
           kind?: string
           name?: string
           note?: string
+          routine_id?: string | null
           time?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "habits_routine_owner_fkey"
+            columns: ["user_id", "routine_id"]
+            isOneToOne: false
+            referencedRelation: "habit_routines"
+            referencedColumns: ["user_id", "id"]
+          },
           {
             foreignKeyName: "habits_user_id_fkey"
             columns: ["user_id"]
@@ -224,6 +266,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatarPath: string
           height: string
           legacy_import_offered: boolean
           name: string
@@ -236,6 +279,7 @@ export type Database = {
           weight: string
         }
         Insert: {
+          avatarPath?: string
           height?: string
           legacy_import_offered?: boolean
           name?: string
@@ -248,6 +292,7 @@ export type Database = {
           weight?: string
         }
         Update: {
+          avatarPath?: string
           height?: string
           legacy_import_offered?: boolean
           name?: string

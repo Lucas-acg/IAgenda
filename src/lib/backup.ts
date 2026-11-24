@@ -8,22 +8,27 @@ const id = z.string().min(1).max(200);
 const text = z.string().max(10000);
 const record = { id, date, time };
 export const entrySchema = z.object({ ...record, type: z.enum(["sono","alimentacao","exercicio","agua","outro"]), note: text, value: z.number().finite().optional(), quality: z.enum(["ruim","ok","boa"]).optional() });
-export const habitSchema = z.object({ ...record, name: text.trim().min(1), kind: z.enum(["recorrente","pontual"]), note: text });
+export const habitSchema = z.object({ ...record, name: text.trim().min(1), kind: z.enum(["recorrente","pontual"]), note: text, routine_id: id.nullable().optional() });
+export const habitRoutineSchema = z.object({ id, name: text.trim().min(1), days: z.array(z.number().int().min(0).max(6)).min(1).max(7).refine((days) => new Set(days).size === days.length), active: z.boolean() });
 export const dateTimeSchema = z.object({ date, time });
 const schema = z.object({
   appointments: z.array(z.object({ ...record, title: text.min(1), description: text, category: z.enum(["trabalho","saude","estudos","pessoal","social","outro"]), reminder: z.number().int().nonnegative(), done: z.boolean(), createdAt: z.string().datetime({ offset: true }) })),
   entries: z.array(entrySchema),
   habits: z.array(habitSchema),
+  habitRoutines: z.array(habitRoutineSchema).default([]),
   reminders: z.array(z.object({ id, name: text.min(1), time, active: z.boolean() })),
   importantDays: z.array(z.object({ id, name: text.min(1), date: z.string().regex(/^\d{2}-\d{2}$/).refine((s) => { const d = new Date(`2000-${s}T12:00:00Z`); return !Number.isNaN(d.getTime()) && d.toISOString().slice(5,10) === s; }), notify: z.boolean() })),
-  profile: z.object({ name: text, timezone: z.string().default("America/Sao_Paulo").refine((s) => { try { new Intl.DateTimeFormat("pt-BR", { timeZone:s }); return true; } catch { return false; } }), height:text,weight:text,wake:time,sleep:time,waterGoal:z.number().positive(),sleepGoal:z.number().positive() }),
+  profile: z.object({ name: text, avatarPath: z.string().max(300).regex(/^(?:[0-9a-f-]{36}\/[\w.-]+)?$/).default(""), timezone: z.string().default("America/Sao_Paulo").refine((s) => { try { new Intl.DateTimeFormat("pt-BR", { timeZone:s }); return true; } catch { return false; } }), height:text,weight:text,wake:time,sleep:time,waterGoal:z.number().positive(),sleepGoal:z.number().positive() }),
   prefs: z.object({ notifications:z.boolean(), weekStartsMonday:z.boolean(), compact:z.boolean().optional(), palette:z.enum(["menta","rosa","azul"]).optional(), accentColor:z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(), theme:z.enum(["claro","escuro","auto"]).optional(), largeText:z.boolean().optional(), animations:z.boolean().optional(), showSummary:z.boolean().optional(), calendarView:z.enum(["mes","semana"]).optional() }),
 });
 export function validateBackup(input: unknown): AppData {
   const data = schema.parse(input);
-  for (const rows of [data.appointments,data.entries,data.habits,data.reminders,data.importantDays]) {
+  for (const rows of [data.appointments,data.entries,data.habits,data.habitRoutines,data.reminders,data.importantDays]) {
     if (new Set(rows.map((r) => r.id)).size !== rows.length) throw new Error("Registros duplicados");
   }
+  const routineIds = new Set(data.habitRoutines.map((r) => r.id));
+  if (data.habits.some((h) => h.routine_id && !routineIds.has(h.routine_id))) throw new Error("Rotina inexistente");
+  if (new Set(data.habitRoutines.map((r) => r.name.toLocaleLowerCase("pt-BR"))).size !== data.habitRoutines.length) throw new Error("Rotinas duplicadas");
   const { palette: _legacy, ...prefs } = data.prefs;
   return { ...data, prefs: { ...prefs, ...normalizeAppearance(data.prefs) } };
 }

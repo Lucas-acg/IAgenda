@@ -1,4 +1,8 @@
 # Ajustes do IAgenda
+- [ ] Implementar rotinas recorrentes, migração dos registros, checklist, sequências e gestão em Configurações.
+- [ ] Adicionar foto privada de perfil e ajustar quinas das barras de frequência.
+- [ ] Limpar código e dependências não usados, documentar configuração e renomear página para Telegram com redirecionamento.
+- [ ] Verificar os novos fluxos, comitar e publicar esta atualização.
 - [x] Corrigir validação, carregamento, sincronização, backup, calendário, lembretes e estatísticas solicitados em 21/11.
 - [x] Aplicar cor personalizada, temas e opções de aparência com persistência e compatibilidade de backups.
 - [x] Verificar as correções e comitar esta atualização; publicação solicitada para ia-genda.lovable.app.

@@ -15,9 +15,10 @@ export async function loadCloudData(userId: string): Promise<{ data: AppData; im
     supabase.from("habits").select("*").eq("user_id", userId),
     supabase.from("reminders").select("*").eq("user_id", userId),
     supabase.from("important_days").select("*").eq("user_id", userId),
+    supabase.from("habit_routines").select("*").eq("user_id", userId),
   ]);
   for (const r of results) if (r.error) throw r.error;
-  const [profile,prefs,appointments,entries,habits,reminders,importantDays] = results;
+  const [profile,prefs,appointments,entries,habits,reminders,importantDays,routines] = results;
   const profileData = profile.data ?? { user_id: userId, name: "", timezone: "America/Sao_Paulo", height: "", weight: "", wake: "07:00", sleep: "23:00", waterGoal: 8, sleepGoal: 8, legacy_import_offered: false };
   const prefsData = prefs.data ?? { notifications: false, weekStartsMonday: false, ...normalizeAppearance() };
   return { importOffered: profileData.legacy_import_offered, data: validateBackup({
@@ -25,6 +26,7 @@ export async function loadCloudData(userId: string): Promise<{ data: AppData; im
     appointments: appointments.data ?? [],
     entries: (entries.data ?? []).map((e) => ({ ...e, value: e.value ?? undefined, quality: e.quality ?? undefined })),
     habits: habits.data ?? [], reminders: reminders.data ?? [], importantDays: importantDays.data ?? [],
+    habitRoutines: routines.data ?? [],
   }) };
 }
 export async function saveCloudData(data: AppData) {

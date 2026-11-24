@@ -43,6 +43,13 @@
       "when": 1795288811880,
       "tag": "0005_custom_accent_and_theme",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795562133763,
+      "tag": "0006_habit_routines_and_profile_photos",
+      "breakpoints": true
     }
   ]
 }
