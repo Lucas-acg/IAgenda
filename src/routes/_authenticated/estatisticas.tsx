@@ -165,8 +165,8 @@ function BarChart({ items }: { items: { key: string; label: string; value: numbe
           <button key={i.key} role="listitem" onClick={() => setActive(active === i.key ? null : i.key)} onMouseEnter={() => setActive(i.key)}
             aria-label={`${i.label}: ${i.value}`} className="group flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1 focus-visible:outline-none">
             <span className={cn("text-xs font-semibold transition", active === i.key ? "opacity-100" : "opacity-60")}>{i.value}</span>
-            <svg className="w-full max-w-14 overflow-visible" style={{ height: `${Math.max(4, (i.value / max) * 85)}%` }} preserveAspectRatio="none" viewBox="0 0 10 10" aria-hidden>
-              <rect x="0" y="0" width="10" height="10" rx="2" className={cn(i.fill, "transition", active && active !== i.key && "opacity-40")} />
+            <svg className="w-full max-w-14 overflow-hidden rounded-[4px]" style={{ height: `${Math.max(4, (i.value / max) * 85)}%` }} preserveAspectRatio="none" viewBox="0 0 10 10" aria-hidden>
+              <rect x="0" y="0" width="10" height="10" className={cn(i.fill, "transition", active && active !== i.key && "opacity-40")} />
             </svg>
           </button>
         ))}

@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { LogOut, Send, UserX } from "lucide-react";
+import { LogOut, Send, UserX, Repeat } from "lucide-react";
 import { deleteMyAccount } from "@/lib/account.functions";
 import { validateBackup } from "@/lib/backup";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +21,8 @@ import { cn } from "@/lib/utils";
 import { AppearanceSettings } from "@/components/app/appearance-settings";
 import { normalizeAppearance } from "@/lib/appearance";
 import { defaultData } from "@/lib/store";
+import { RoutineSettings } from "@/components/app/habit-routines";
+import { ProfilePhotoControl } from "@/components/app/profile-photo";
 
 export const Route = createFileRoute("/_authenticated/configuracoes")({
   head: () => ({
@@ -41,9 +43,10 @@ const SECTIONS = [
   { k: "semanal", l: "Relatório semanal", d: "Resumo dos últimos 7 dias", icon: CalendarRange },
   { k: "mensal", l: "Relatório mensal", d: "Consolidação e padrões", icon: CalendarDays },
   { k: "dias", l: "Dias importantes", d: "Aniversários e datas anuais", icon: Cake },
+  { k: "rotinas", l: "Hábitos e rotinas", d: "Dias da semana e repetição", icon: Repeat },
   { k: "lembretes", l: "Eventos diários e lembretes", d: "Água, estudo, remédios…", icon: BellRing },
   { k: "preferencias", l: "Preferências", d: "Notificações, aparência e dados", icon: SlidersHorizontal },
-  { k: "whatsapp", l: "Telegram", d: "Compromissos a partir das conversas", icon: Send },
+  { k: "telegram", l: "Telegram", d: "Compromissos a partir das conversas", icon: Send },
   { k: "conta", l: "Conta", d: "Sair ou excluir sua conta", icon: UserX },
 ] as const;
 type Key = (typeof SECTIONS)[number]["k"];
@@ -146,8 +149,9 @@ function SectionBody({ k }: { k: Key }) {
   if (k === "semanal") return <Report kind="semanal" />;
   if (k === "mensal") return <Report kind="mensal" />;
   if (k === "dias") return <ImportantDays />;
+  if (k === "rotinas") return <RoutineSettings />;
   if (k === "lembretes") return <Reminders />;
-  if (k === "whatsapp") return <div className="space-y-3"><Button asChild className="h-11 rounded-xl"><Link to="/whatsapp"><Send className="size-4" />Abrir integração com Telegram</Link></Button></div>;
+  if (k === "telegram") return <div className="space-y-3"><Button asChild className="h-11 rounded-xl"><Link to="/telegram"><Send className="size-4" />Abrir integração com Telegram</Link></Button></div>;
   if (k === "conta") return <DeleteAccount />;
   return <Preferences />;
 }
@@ -163,6 +167,7 @@ function ProfileForm() {
   const set = (patch: Partial<AppData["profile"]>) => setData((d) => ({ ...d, profile: { ...d.profile, ...patch } }));
   return (
     <div className="grid gap-4 sm:grid-cols-2">
+      <div className="sm:col-span-2"><ProfilePhotoControl /></div>
       <div className="sm:col-span-2"><F id="pf-name" label="Nome"><Input id="pf-name" className={inp} value={p.name} onChange={(e) => set({ name: e.target.value })} placeholder="Como quer ser chamado(a)" /></F></div>
       <F id="pf-h" label="Altura (cm) — opcional"><Input id="pf-h" inputMode="numeric" className={inp} value={p.height} onChange={(e) => set({ height: e.target.value })} /></F>
       <F id="pf-w" label="Peso (kg) — opcional"><Input id="pf-w" inputMode="decimal" className={inp} value={p.weight} onChange={(e) => set({ weight: e.target.value })} /></F>
@@ -327,8 +332,8 @@ function Preferences() {
       <AlertDialog open={pendingBackup !== null} onOpenChange={(open) => { if (!open) setPendingBackup(null); }}>
         <AlertDialogContent className="rounded-3xl">
           <AlertDialogHeader><AlertDialogTitle>Restaurar este backup?</AlertDialogTitle><AlertDialogDescription>
-            O arquivo contém {pendingBackup ? pendingBackup.appointments.length + pendingBackup.entries.length + pendingBackup.habits.length + pendingBackup.reminders.length + pendingBackup.importantDays.length : 0} registros:
-            {pendingBackup && ` ${pendingBackup.appointments.length} compromissos, ${pendingBackup.entries.length} acontecimentos, ${pendingBackup.habits.length} hábitos, ${pendingBackup.reminders.length} lembretes e ${pendingBackup.importantDays.length} dias importantes.`}
+            O arquivo contém {pendingBackup ? pendingBackup.appointments.length + pendingBackup.entries.length + pendingBackup.habits.length + pendingBackup.habitRoutines.length + pendingBackup.reminders.length + pendingBackup.importantDays.length : 0} registros:
+            {pendingBackup && ` ${pendingBackup.appointments.length} compromissos, ${pendingBackup.entries.length} acontecimentos, ${pendingBackup.habits.length} hábitos, ${pendingBackup.habitRoutines.length} rotinas, ${pendingBackup.reminders.length} lembretes e ${pendingBackup.importantDays.length} dias importantes.`}
             {" "}Todos os dados e preferências atuais serão substituídos.
           </AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter><AlertDialogCancel className="h-11 rounded-xl">Cancelar</AlertDialogCancel><AlertDialogAction className="h-11 rounded-xl" onClick={() => { if (!pendingBackup) return; setData(() => pendingBackup); setPendingBackup(null); toast.success("Backup restaurado"); }}>Restaurar backup</AlertDialogAction></AlertDialogFooter>

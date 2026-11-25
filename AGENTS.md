@@ -43,3 +43,7 @@ use the editor.
 - The Telegram assistant uses a server-only direct Bot API token and server-verified chat links; reuse wa_* tables with phone storing chat_id and never infer user identity from message text.
 - Preserve cloud-created appointments outside the client's loaded ID baseline when saving local edits, because webhook writes can arrive between reads.
 - Process verified Telegram deliveries through a durable inbox and request-scoped background execution; ambiguous outbound sends require reconciliation, not blind replay.
+- Keep recurring definitions separate from daily habit logs, with owner-scoped deferred references; replacing definitions and logs in one save preserves history and transactional consistency.
+- Compute scheduled-day streaks and case-insensitive suggestions in `habit-routines.ts`; shared pure rules keep checklist and tests consistent.
+- Store profile photos in an owner-scoped private Storage bucket and persist only their path; temporary signed URLs prevent public photo access.
+- Keep `/whatsapp` as a page redirect to `/telegram`, without renaming the registered webhook or integration storage; external bot registrations must remain valid.

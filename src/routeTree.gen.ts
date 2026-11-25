@@ -16,6 +16,7 @@ import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedCalendarioRouteImport } from './routes/_authenticated/calendario'
 import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
 import { Route as AuthenticatedEstatisticasRouteImport } from './routes/_authenticated/estatisticas'
+import { Route as AuthenticatedTelegramRouteImport } from './routes/_authenticated/telegram'
 import { Route as AuthenticatedWhatsappRouteImport } from './routes/_authenticated/whatsapp'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
 import { Route as ApiPublicWhatsappWorkerRouteImport } from './routes/api/public/whatsapp/worker'
@@ -56,6 +57,11 @@ const AuthenticatedEstatisticasRoute =
     path: '/estatisticas',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedTelegramRoute = AuthenticatedTelegramRouteImport.update({
+  id: '/telegram',
+  path: '/telegram',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedWhatsappRoute = AuthenticatedWhatsappRouteImport.update({
   id: '/whatsapp',
   path: '/whatsapp',
@@ -80,6 +86,7 @@ export interface FileRoutesByFullPath {
   '/calendario': typeof AuthenticatedCalendarioRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/estatisticas': typeof AuthenticatedEstatisticasRoute
+  '/telegram': typeof AuthenticatedTelegramRoute
   '/whatsapp': typeof AuthenticatedWhatsappRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/api/public/whatsapp/worker': typeof ApiPublicWhatsappWorkerRoute
@@ -90,6 +97,7 @@ export interface FileRoutesByTo {
   '/calendario': typeof AuthenticatedCalendarioRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/estatisticas': typeof AuthenticatedEstatisticasRoute
+  '/telegram': typeof AuthenticatedTelegramRoute
   '/whatsapp': typeof AuthenticatedWhatsappRoute
   '/': typeof AuthenticatedIndexRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
@@ -103,6 +111,7 @@ export interface FileRoutesById {
   '/_authenticated/calendario': typeof AuthenticatedCalendarioRoute
   '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/_authenticated/estatisticas': typeof AuthenticatedEstatisticasRoute
+  '/_authenticated/telegram': typeof AuthenticatedTelegramRoute
   '/_authenticated/whatsapp': typeof AuthenticatedWhatsappRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
@@ -117,6 +126,7 @@ export interface FileRouteTypes {
     | '/calendario'
     | '/configuracoes'
     | '/estatisticas'
+    | '/telegram'
     | '/whatsapp'
     | '/api/public/whatsapp/webhook'
     | '/api/public/whatsapp/worker'
@@ -127,6 +137,7 @@ export interface FileRouteTypes {
     | '/calendario'
     | '/configuracoes'
     | '/estatisticas'
+    | '/telegram'
     | '/whatsapp'
     | '/'
     | '/api/public/whatsapp/webhook'
@@ -139,6 +150,7 @@ export interface FileRouteTypes {
     | '/_authenticated/calendario'
     | '/_authenticated/configuracoes'
     | '/_authenticated/estatisticas'
+    | '/_authenticated/telegram'
     | '/_authenticated/whatsapp'
     | '/_authenticated/'
     | '/api/public/whatsapp/webhook'
@@ -204,6 +216,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEstatisticasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/telegram': {
+      id: '/_authenticated/telegram'
+      path: '/telegram'
+      fullPath: '/telegram'
+      preLoaderRoute: typeof AuthenticatedTelegramRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/whatsapp': {
       id: '/_authenticated/whatsapp'
       path: '/whatsapp'
@@ -232,6 +251,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCalendarioRoute: typeof AuthenticatedCalendarioRoute
   AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
   AuthenticatedEstatisticasRoute: typeof AuthenticatedEstatisticasRoute
+  AuthenticatedTelegramRoute: typeof AuthenticatedTelegramRoute
   AuthenticatedWhatsappRoute: typeof AuthenticatedWhatsappRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
@@ -240,6 +260,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCalendarioRoute: AuthenticatedCalendarioRoute,
   AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
   AuthenticatedEstatisticasRoute: AuthenticatedEstatisticasRoute,
+  AuthenticatedTelegramRoute: AuthenticatedTelegramRoute,
   AuthenticatedWhatsappRoute: AuthenticatedWhatsappRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }

@@ -11,6 +11,7 @@ import { EmptyState, PageHeader, Section } from "@/components/app/shared";
 import { useAdd } from "@/components/app/add-flow";
 import { todayLabel } from "@/components/app/shell";
 import { cn } from "@/lib/utils";
+import { TodayHabits } from "@/components/app/habit-routines";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -64,6 +65,8 @@ function Compromissos() {
         <Stat icon={Droplets} label="Água" value={ready ? `${water}/${data.profile.waterGoal}` : "–"} sub="copos" cls="bg-water/15 text-water" progress={water / Math.max(1, data.profile.waterGoal)} />
         <Stat icon={Bed} label="Último sono" value={lastSleep?.value ? `${lastSleep.value}h` : "–"} sub={lastSleep?.quality ? `qualidade ${lastSleep.quality}` : "sem registro"} cls="bg-sleep/15 text-sleep" />
       </div>}
+
+      {data.prefs.showSummary && ready && <TodayHabits />}
 
       <div role="tablist" aria-label="Filtro" className="segmented-control mb-5 inline-flex w-full rounded-2xl bg-muted p-1 md:w-auto">
         {([["ativos", "Ativos"], ["concluidos", "Concluídos"], ["historico", "Histórico"]] as const).map(([k, l]) => (

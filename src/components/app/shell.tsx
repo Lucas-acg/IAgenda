@@ -10,6 +10,7 @@ import { nowTime, parseISODate, toISODate, useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { APPEARANCE_KEY, applyAppearance } from "@/lib/appearance";
 import { appointmentNoticeKey } from "@/lib/calendar-math";
+import { ProfileAvatar } from "./profile-photo";
 
 const NAV = [
   { to: "/", label: "Compromissos", icon: ListChecks },
@@ -24,7 +25,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { data, ready, loadError, reload } = useStore();
   const path = useRouterState({ select: (s) => s.location.pathname });
   useReminderNotifications();
-  const initials = (data.profile.name || "Você").split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
   useEffect(() => {
     if (!ready) return;
     const media = window.matchMedia("(prefers-color-scheme: dark)");
@@ -59,7 +59,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           })}
         </nav>
         <Link to="/configuracoes" className="flex items-center gap-3 rounded-xl p-2 hover:bg-muted">
-          <span className="grid size-10 shrink-0 place-items-center rounded-full bg-accent font-semibold text-accent-foreground">{ready ? initials : ""}</span>
+          <ProfileAvatar />
           <span className="hidden min-w-0 lg:block">
             <span className="block truncate text-sm font-semibold">{data.profile.name || "Seu perfil"}</span>
             <span className="block text-xs text-muted-foreground">Perfil e preferências</span>

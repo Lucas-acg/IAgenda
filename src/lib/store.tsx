@@ -203,7 +203,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     removeEntry: (id) => update((d) => ({ ...d, entries: d.entries.filter((x) => x.id !== id) })),
     addHabit: (h) => {
       const parsed = habitSchema.safeParse({ ...h, id: uid() });
-      if (!ready || !parsed.success || !validHabitDate(e.date, toISODate(new Date())) || (e.routine_id && !latest.current.habitRoutines.some((r) => r.id === e.routine_id))) { toast.error("Informe nome, data e horário válidos, sem data futura."); return false; }
+      if (!ready || !parsed.success || !validHabitDate(h.date, toISODate(new Date())) || (h.routine_id && !latest.current.habitRoutines.some((r) => r.id === h.routine_id))) { toast.error("Informe nome, data e horário válidos, sem data futura."); return false; }
       update((d) => ({ ...d, habits: [...d.habits, parsed.data] })); return true;
     },
     removeHabit: (id) => update((d) => ({ ...d, habits: d.habits.filter((x) => x.id !== id) })),

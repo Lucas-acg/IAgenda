@@ -12,6 +12,8 @@ import { CATEGORY_LABEL, ENTRY_LABEL, nowTime, toISODate, useStore, type Appoint
 import { ENTRY_ICON, ENTRY_COLOR } from "./shared";
 import { cn } from "@/lib/utils";
 import { dateTimeSchema } from "@/lib/backup";
+import { ALL_WEEKDAYS, habitSuggestions, habitNameKey } from "@/lib/habit-routines";
+import { WeekdayPicker } from "./habit-routines";
 
 type Kind = "menu" | "compromisso" | "acontecimento" | "habito";
 interface AddCtx { open: (k?: Kind, opts?: { date?: string; edit?: Appointment }) => void }
@@ -195,32 +197,40 @@ function EntryForm({ date, onDone }: { date?: string | undefined; onDone: () => 
 
 const HABIT_SUGGESTIONS = ["Meditar", "Ler", "Estudar", "Tomar remédio", "Caminhar", "Skincare"];
 function HabitForm({ date, onDone }: { date?: string | undefined; onDone: () => void }) {
-  const { addHabit, data } = useStore();
-  const known = Array.from(new Set([...data.habits.map((h) => h.name), ...HABIT_SUGGESTIONS])).slice(0, 8);
-  const [f, setF] = useState({ name: "", kind: "recorrente" as "recorrente" | "pontual", date: date ?? toISODate(new Date()), time: nowTime(), note: "" });
+  const { addHabit, saveRoutine, data } = useStore();
+  const today = toISODate(new Date());
+  const [days, setDays] = useState<number[]>(ALL_WEEKDAYS);
+  const known = habitSuggestions(data.habits, data.habitRoutines, HABIT_SUGGESTIONS).slice(0, 8);
+  const [f, setF] = useState({ name: "", kind: "recorrente" as "recorrente" | "pontual", date: date && date <= today ? date : today, time: nowTime(), note: "" });
   return (
     <form className="space-y-4" onSubmit={(e) => {
       e.preventDefault();
       if (!f.name.trim()) { toast.error("Informe o nome do hábito."); return; }
-      if (!dateTimeSchema.safeParse(f).success) { toast.error("Preencha a data e o horário."); return; }
+      if (f.kind === "recorrente") {
+        if (!saveRoutine({ name: f.name.trim(), days, active: true })) return;
+        toast.success("Rotina criada"); onDone(); return;
+      }
+      if (!dateTimeSchema.safeParse(f).success || f.date > today) { toast.error("Preencha data e horário válidos, sem data futura."); return; }
       if (!addHabit({ ...f, name: f.name.trim() })) return; toast.success("Hábito registrado"); onDone();
     }}>
       <Field id="hb-name" label="Hábito"><Input id="hb-name" className="h-11 rounded-xl" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder="Ex.: Meditar" /></Field>
       <div className="flex flex-wrap gap-2" aria-label="Sugestões">
-        {known.map((n) => <button type="button" key={n} onClick={() => setF({ ...f, name: n })} className={cn("min-h-11 rounded-full border px-4 text-sm", f.name === n ? "border-primary bg-primary-soft" : "bg-card")}>{n}</button>)}
+        {known.map((n) => <Button type="button" key={n} onClick={() => setF({ ...f, name: n })} variant="outline" className={cn("min-h-11 rounded-full px-4 text-sm", habitNameKey(f.name) === habitNameKey(n) && "border-primary bg-primary-soft")}>{n}</Button>)}
       </div>
       <fieldset>
         <legend className="mb-2 text-sm font-medium">Frequência</legend>
         <div className="grid grid-cols-2 gap-2">
-          {(["recorrente", "pontual"] as const).map((k) => <button type="button" key={k} aria-pressed={f.kind === k} onClick={() => setF({ ...f, kind: k })} className={cn("h-11 rounded-xl border text-sm font-medium capitalize", f.kind === k ? "border-primary bg-primary-soft" : "bg-card")}>{k}</button>)}
+          {(["recorrente", "pontual"] as const).map((k) => <Button type="button" variant="outline" key={k} aria-pressed={f.kind === k} onClick={() => setF({ ...f, kind: k })} className={cn("h-auto min-h-11 whitespace-normal rounded-xl text-sm font-medium", f.kind === k && "border-primary bg-primary-soft")}>{k === "recorrente" ? "Rotina que se repete" : "Registro avulso"}</Button>)}
         </div>
       </fieldset>
+      {f.kind === "recorrente" ? <WeekdayPicker days={days} onChange={setDays} /> : <>
       <div className="grid grid-cols-2 gap-3">
-        <Field id="hb-date" label="Data"><Input required id="hb-date" type="date" className="h-11 rounded-xl" value={f.date} onChange={(e) => setF({ ...f, date: e.target.value })} /></Field>
+        <Field id="hb-date" label="Data"><Input required id="hb-date" type="date" max={today} className="h-11 rounded-xl" value={f.date} onChange={(e) => setF({ ...f, date: e.target.value })} /></Field>
         <Field id="hb-time" label="Horário"><Input required id="hb-time" type="time" className="h-11 rounded-xl" value={f.time} onChange={(e) => setF({ ...f, time: e.target.value })} /></Field>
       </div>
       <Field id="hb-note" label="Observação"><Textarea id="hb-note" className="rounded-xl" rows={2} value={f.note} onChange={(e) => setF({ ...f, note: e.target.value })} placeholder="Opcional" /></Field>
-      <Button type="submit" className="h-12 w-full rounded-xl text-base">Registrar hábito</Button>
+      </>}
+      <Button type="submit" className="h-12 w-full rounded-xl text-base">{f.kind === "recorrente" ? "Criar rotina" : "Registrar hábito"}</Button>
     </form>
   );
 }
