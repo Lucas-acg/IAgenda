@@ -3,7 +3,7 @@
 - [x] Adicionar foto privada de perfil e ajustar quinas das barras de frequência.
 - [x] Limpar código e dependências não usados, documentar configuração e renomear página para Telegram com redirecionamento.
 - [x] Verificar criação, marcação, pausa, edição, exclusão preservando histórico, foto e backup com conta de teste; 44 testes passaram.
-- [ ] Comitar e solicitar publicação desta atualização.
+- [x] Comitar e solicitar publicação desta atualização em https://ia-genda.lovable.app.
 - [ ] Remover fisicamente as quatro tabelas legadas: desativadas por comentário, preservadas pela política de alterações compatíveis.
 - [x] Corrigir validação, carregamento, sincronização, backup, calendário, lembretes e estatísticas solicitados em 21/11.
 - [x] Aplicar cor personalizada, temas e opções de aparência com persistência e compatibilidade de backups.
