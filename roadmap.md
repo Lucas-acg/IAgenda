@@ -33,3 +33,13 @@
 - [ ] Verificar vínculo, criação e resposta real (aguarda login autorizado e registro do webhook; confirmação remota do bot excedeu o tempo limite).
 - [x] Configurar TELEGRAM_BOT_TOKEN, TELEGRAM_BOT_USERNAME e TELEGRAM_WEBHOOK_SECRET pelo armazenamento seguro.
 - [ ] Registrar webhook após publicação (usuário fará registro com segredo copiado do formulário).
+
+# Correções solicitadas em 28/11
+- [ ] Mostrar senha no login, acrescentar visão anual e ordenar semana/mês/ano com mês padrão.
+- [ ] Remover espaçamento compacto e aba Eventos diários e lembretes.
+- [ ] Adicionar horário e configuração de notificação às rotinas.
+- [ ] Adicionar nota e foto privada a dias importantes.
+- [ ] Criptografar exportação e permitir restauração protegida.
+- [ ] Corrigir aplicação da cor na navegação do PWA.
+- [ ] Verificar fluxos, testes e salvar alterações.
+- [ ] Enviar notificações dos hábitos com o aplicativo fechado, registrar dispositivos e configurar envio agendado seguro.

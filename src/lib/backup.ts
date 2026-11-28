@@ -9,7 +9,7 @@ const text = z.string().max(10000);
 const record = { id, date, time };
 export const entrySchema = z.object({ ...record, type: z.enum(["sono","alimentacao","exercicio","agua","outro"]), note: text, value: z.number().finite().optional(), quality: z.enum(["ruim","ok","boa"]).optional() });
 export const habitSchema = z.object({ ...record, name: text.trim().min(1), kind: z.enum(["recorrente","pontual"]), note: text, routine_id: id.nullable().optional() });
-export const habitRoutineSchema = z.object({ id, name: text.trim().min(1), days: z.array(z.number().int().min(0).max(6)).min(1).max(7).refine((days) => new Set(days).size === days.length), active: z.boolean() });
+export const habitRoutineSchema = z.object({ id, name: text.trim().min(1), days: z.array(z.number().int().min(0).max(6)).min(1).max(7).refine((days) => new Set(days).size === days.length), active: z.boolean(), time: time.nullable().optional(), notify: z.boolean().optional() }).refine((r) => !r.notify || !!r.time, { message: "Informe o horário para notificar" });
 export const dateTimeSchema = z.object({ date, time });
 const schema = z.object({
   appointments: z.array(z.object({ ...record, title: text.min(1), description: text, category: z.enum(["trabalho","saude","estudos","pessoal","social","outro"]), reminder: z.number().int().nonnegative(), done: z.boolean(), createdAt: z.string().datetime({ offset: true }) })),
@@ -17,9 +17,9 @@ const schema = z.object({
   habits: z.array(habitSchema),
   habitRoutines: z.array(habitRoutineSchema).default([]),
   reminders: z.array(z.object({ id, name: text.min(1), time, active: z.boolean() })),
-  importantDays: z.array(z.object({ id, name: text.min(1), date: z.string().regex(/^\d{2}-\d{2}$/).refine((s) => { const d = new Date(`2000-${s}T12:00:00Z`); return !Number.isNaN(d.getTime()) && d.toISOString().slice(5,10) === s; }), notify: z.boolean() })),
+  importantDays: z.array(z.object({ id, name: text.min(1), date: z.string().regex(/^\d{2}-\d{2}$/).refine((s) => { const d = new Date(`2000-${s}T12:00:00Z`); return !Number.isNaN(d.getTime()) && d.toISOString().slice(5,10) === s; }), notify: z.boolean(), note: text.nullish().transform((v) => v ?? ""), photoPath: z.string().max(300).regex(/^(?:[0-9a-f-]{36}\/[\w.-]+)?$/).nullish().transform((v) => v ?? "") })),
   profile: z.object({ name: text, avatarPath: z.string().max(300).regex(/^(?:[0-9a-f-]{36}\/[\w.-]+)?$/).default(""), timezone: z.string().default("America/Sao_Paulo").refine((s) => { try { new Intl.DateTimeFormat("pt-BR", { timeZone:s }); return true; } catch { return false; } }), height:text,weight:text,wake:time,sleep:time,waterGoal:z.number().positive(),sleepGoal:z.number().positive() }),
-  prefs: z.object({ notifications:z.boolean(), weekStartsMonday:z.boolean(), compact:z.boolean().optional(), palette:z.enum(["menta","rosa","azul"]).optional(), accentColor:z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(), theme:z.enum(["claro","escuro","auto"]).optional(), largeText:z.boolean().optional(), animations:z.boolean().optional(), showSummary:z.boolean().optional(), calendarView:z.enum(["mes","semana"]).optional() }),
+  prefs: z.object({ notifications:z.boolean(), weekStartsMonday:z.boolean(), palette:z.enum(["menta","rosa","azul"]).optional(), accentColor:z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(), theme:z.enum(["claro","escuro","auto"]).optional(), largeText:z.boolean().optional(), animations:z.boolean().optional(), showSummary:z.boolean().optional(), calendarView:z.enum(["mes","semana","ano"]).optional() }),
 });
 export function validateBackup(input: unknown): AppData {
   const data = schema.parse(input);

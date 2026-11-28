@@ -110,8 +110,9 @@ function Calendario() {
               aria-label="Visualização"
               className="inline-flex rounded-xl bg-muted p-1"
             >
-              {(["mes", "semana", "ano"] as const).map((v) => (
-                <button
+              {(["semana", "mes", "ano"] as const).map((v) => (
+                <Button
+                  variant="ghost"
                   key={v}
                   role="tab"
                   aria-selected={view === v}
@@ -122,7 +123,7 @@ function Calendario() {
                   )}
                 >
                   {v === "mes" ? "Mês" : v === "ano" ? "Ano" : "Semana"}
-                </button>
+                </Button>
               ))}
             </div>
             <Button

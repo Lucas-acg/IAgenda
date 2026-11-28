@@ -31,7 +31,6 @@ export function AppearanceSettings() {
         </div>
       </fieldset>
       <div className="divide-y border-y">
-        <AppearanceToggle id="appearance-compact" label="Espaçamento compacto" checked={p.compact} onChange={(v) => set({ compact: v })} />
         <AppearanceToggle id="appearance-text" label="Texto ampliado" checked={p.largeText} onChange={(v) => set({ largeText: v })} />
         <AppearanceToggle id="appearance-motion" label="Animações suaves" checked={p.animations} onChange={(v) => set({ animations: v })} />
         <AppearanceToggle id="appearance-summary" label="Resumo na aba Compromissos" checked={p.showSummary} onChange={(v) => set({ showSummary: v })} />
@@ -39,7 +38,7 @@ export function AppearanceSettings() {
       <fieldset>
         <legend className="mb-2 flex items-center gap-2 text-sm font-medium"><CalendarDays className="size-4 text-primary" />Calendário ao abrir</legend>
         <div className="segmented-control inline-flex rounded-xl bg-muted p-1">
-          {(["mes", "semana"] as const).map((v) => <Button key={v} variant="ghost" aria-pressed={p.calendarView === v} className={cn("h-11 rounded-lg px-5", p.calendarView === v ? "bg-card text-foreground shadow-sm hover:bg-card" : "text-muted-foreground")} onClick={() => set({ calendarView: v })}>{v === "mes" ? "Mês" : "Semana"}</Button>)}
+          {(["semana", "mes", "ano"] as const).map((v) => <Button key={v} variant="ghost" aria-pressed={p.calendarView === v} className={cn("h-11 rounded-lg px-4", p.calendarView === v ? "bg-card text-foreground shadow-sm hover:bg-card" : "text-muted-foreground")} onClick={() => set({ calendarView: v })}>{v === "mes" ? "Mês" : v === "ano" ? "Ano" : "Semana"}</Button>)}
         </div>
       </fieldset>
     </section>

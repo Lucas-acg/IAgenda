@@ -1,12 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { LogOut, Send, UserX, Repeat } from "lucide-react";
 import { deleteMyAccount } from "@/lib/account.functions";
-import { validateBackup } from "@/lib/backup";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { appointmentHasPassed } from "@/lib/calendar-math";
-import { User, CalendarRange, CalendarDays, Cake, BellRing, SlidersHorizontal, ChevronRight, ChevronLeft, Plus, Trash2, Download, Upload } from "lucide-react";
+import { User, CalendarRange, CalendarDays, Cake, SlidersHorizontal, ChevronRight, ChevronLeft, Trash2 } from "lucide-react";
 import { addDays, format, startOfMonth, startOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -15,22 +14,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { ENTRY_LABEL, appointmentStatus, toISODate, uid, useStore, type AppData, type EntryType } from "@/lib/store";
+import { ENTRY_LABEL, appointmentStatus, toISODate, useStore, type AppData, type EntryType } from "@/lib/store";
 import { PageHeader } from "@/components/app/shared";
 import { cn } from "@/lib/utils";
 import { AppearanceSettings } from "@/components/app/appearance-settings";
-import { normalizeAppearance } from "@/lib/appearance";
-import { defaultData } from "@/lib/store";
 import { RoutineSettings } from "@/components/app/habit-routines";
 import { ProfilePhotoControl } from "@/components/app/profile-photo";
+import { ImportantDays } from "@/components/app/important-days";
+import { BackupControls } from "@/components/app/backup-controls";
 
 export const Route = createFileRoute("/_authenticated/configuracoes")({
   head: () => ({
     meta: [
       { title: "Configurações — IAgenda" },
-      { name: "description", content: "Perfil, relatórios, dias importantes, lembretes diários e preferências." },
+      { name: "description", content: "Perfil, relatórios, dias importantes, rotinas e preferências." },
       { property: "og:title", content: "Configurações — IAgenda" },
-      { property: "og:description", content: "Perfil, relatórios, dias importantes, lembretes diários e preferências." },
+      { property: "og:description", content: "Perfil, relatórios, dias importantes, rotinas e preferências." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -44,7 +43,6 @@ const SECTIONS = [
   { k: "mensal", l: "Relatório mensal", d: "Consolidação e padrões", icon: CalendarDays },
   { k: "dias", l: "Dias importantes", d: "Aniversários e datas anuais", icon: Cake },
   { k: "rotinas", l: "Hábitos e rotinas", d: "Dias da semana e repetição", icon: Repeat },
-  { k: "lembretes", l: "Eventos diários e lembretes", d: "Água, estudo, remédios…", icon: BellRing },
   { k: "preferencias", l: "Preferências", d: "Notificações, aparência e dados", icon: SlidersHorizontal },
   { k: "telegram", l: "Telegram", d: "Compromissos a partir das conversas", icon: Send },
   { k: "conta", l: "Conta", d: "Sair ou excluir sua conta", icon: UserX },
@@ -150,7 +148,6 @@ function SectionBody({ k }: { k: Key }) {
   if (k === "mensal") return <Report kind="mensal" />;
   if (k === "dias") return <ImportantDays />;
   if (k === "rotinas") return <RoutineSettings />;
-  if (k === "lembretes") return <Reminders />;
   if (k === "telegram") return <div className="space-y-3"><Button asChild className="h-11 rounded-xl"><Link to="/telegram"><Send className="size-4" />Abrir integração com Telegram</Link></Button></div>;
   if (k === "conta") return <DeleteAccount />;
   return <Preferences />;
@@ -229,69 +226,8 @@ function Report({ kind }: { kind: "semanal" | "mensal" }) {
   );
 }
 
-function ImportantDays() {
-  const { data, setData } = useStore();
-  const [f, setF] = useState({ name: "", date: "" });
-  const sorted = [...data.importantDays].sort((a, b) => a.date.localeCompare(b.date));
-  return (
-    <div className="space-y-5">
-      <form className="grid gap-3 sm:grid-cols-[1fr_180px_auto] sm:items-end" onSubmit={(e) => {
-        e.preventDefault();
-        if (!f.name.trim() || !f.date) { toast.error("Preencha nome e data."); return; }
-        setData((d) => ({ ...d, importantDays: [...d.importantDays, { id: uid(), name: f.name.trim(), date: f.date.slice(5), notify: true }] }));
-        setF({ name: "", date: "" }); toast.success("Dia importante salvo");
-      }}>
-        <F id="id-name" label="Nome"><Input id="id-name" className={inp} value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder="Aniversário da Ana" /></F>
-        <F id="id-date" label="Data"><Input id="id-date" type="date" className={inp} value={f.date} onChange={(e) => setF({ ...f, date: e.target.value })} /></F>
-        <Button type="submit" className="h-11 rounded-xl"><Plus className="size-4" />Adicionar</Button>
-      </form>
-      <p className="text-xs text-muted-foreground">Repete todo ano no mesmo dia.</p>
-      {sorted.length === 0 ? <p className="rounded-2xl border border-dashed p-6 text-center text-sm text-muted-foreground">Nenhum dia importante ainda.</p> : (
-        <ul className="space-y-2">{sorted.map((d) => (
-          <li key={d.id} className="flex items-center gap-3 rounded-2xl border p-3">
-            <span className="grid size-11 place-items-center rounded-xl bg-accent text-sm font-bold text-accent-foreground">{d.date.slice(3)}/{d.date.slice(0, 2)}</span>
-            <span className="flex-1 font-medium">{d.name}</span>
-            <Label htmlFor={`n-${d.id}`} className="sr-only">Notificar</Label>
-            <Switch id={`n-${d.id}`} checked={d.notify} onCheckedChange={(v) => setData((x) => ({ ...x, importantDays: x.importantDays.map((y) => (y.id === d.id ? { ...y, notify: v } : y)) }))} />
-            <Button size="icon" variant="ghost" className="size-11 rounded-xl" aria-label="Excluir" onClick={() => setData((x) => ({ ...x, importantDays: x.importantDays.filter((y) => y.id !== d.id) }))}><Trash2 className="size-4" /></Button>
-          </li>))}
-        </ul>
-      )}
-    </div>
-  );
-}
-
-function Reminders() {
-  const { data, setData } = useStore();
-  const [f, setF] = useState({ name: "", time: "08:00" });
-  return (
-    <div className="space-y-5">
-      <form className="grid gap-3 sm:grid-cols-[1fr_140px_auto] sm:items-end" onSubmit={(e) => {
-        e.preventDefault(); if (!f.name.trim()) { toast.error("Dê um nome ao lembrete."); return; }
-        setData((d) => ({ ...d, reminders: [...d.reminders, { id: uid(), name: f.name.trim(), time: f.time, active: true }] }));
-        setF({ name: "", time: "08:00" }); toast.success("Lembrete criado");
-      }}>
-        <F id="rm-name" label="Atividade"><Input id="rm-name" className={inp} value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder="Tomar vitamina" /></F>
-        <F id="rm-time" label="Horário"><Input id="rm-time" type="time" className={inp} value={f.time} onChange={(e) => setF({ ...f, time: e.target.value })} /></F>
-        <Button type="submit" className="h-11 rounded-xl"><Plus className="size-4" />Adicionar</Button>
-      </form>
-      <ul className="space-y-2">{[...data.reminders].sort((a, b) => a.time.localeCompare(b.time)).map((r) => (
-        <li key={r.id} className="flex items-center gap-3 rounded-2xl border p-3">
-          <span className="w-14 font-display font-bold text-primary">{r.time}</span>
-          <span className="flex-1 font-medium">{r.name}</span>
-          <Label htmlFor={`r-${r.id}`} className="sr-only">Ativo</Label>
-          <Switch id={`r-${r.id}`} checked={r.active} onCheckedChange={(v) => setData((x) => ({ ...x, reminders: x.reminders.map((y) => (y.id === r.id ? { ...y, active: v } : y)) }))} />
-          <Button size="icon" variant="ghost" className="size-11 rounded-xl" aria-label="Excluir" onClick={() => setData((x) => ({ ...x, reminders: x.reminders.filter((y) => y.id !== r.id) }))}><Trash2 className="size-4" /></Button>
-        </li>))}
-      </ul>
-      {!data.prefs.notifications && <p className="text-sm text-muted-foreground">Ative as notificações em Preferências para receber os avisos.</p>}
-    </div>
-  );
-}
-
 function Preferences() {
   const { data, setData, resetAll } = useStore();
-  const [pendingBackup, setPendingBackup] = useState<AppData | null>(null);
   const setP = (patch: Partial<AppData["prefs"]>) => setData((d) => ({ ...d, prefs: { ...d.prefs, ...patch } }));
   const toggleNotif = async (v: boolean) => {
     if (v) {
@@ -302,12 +238,6 @@ function Preferences() {
     }
     setP({ notifications: v });
   };
-  const exportData = () => {
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob); const a = document.createElement("a");
-    a.href = url; a.download = `iagenda-backup-${toISODate(new Date())}.json`; a.click(); URL.revokeObjectURL(url);
-  };
-  const importData = (file: File) => file.text().then((t) => { try { const parsed = JSON.parse(t) as Partial<AppData>; const base = defaultData(); const restored = validateBackup({ ...base, ...parsed, profile: { ...base.profile, ...parsed.profile }, prefs: { ...base.prefs, ...parsed.prefs, ...normalizeAppearance(parsed.prefs) } }); setPendingBackup(restored); } catch { toast.error("Arquivo de backup inválido."); } }).catch(() => toast.error("Não foi possível ler o arquivo."));
   const Row = ({ id, title, desc, children }: { id: string; title: string; desc: string; children: ReactNode }) => (
     <div className="flex items-center justify-between gap-4 border-b py-4"><div className="min-w-0"><Label htmlFor={id} className="font-semibold">{title}</Label><p className="text-sm text-muted-foreground">{desc}</p></div><div className="shrink-0">{children}</div></div>
   );
@@ -317,10 +247,7 @@ function Preferences() {
       <Row id="pr-week" title="Semana começa na segunda" desc="Afeta calendário e comparações semanais."><Switch id="pr-week" checked={data.prefs.weekStartsMonday} onCheckedChange={(v) => setP({ weekStartsMonday: v })} /></Row>
       <div className="py-4"><AppearanceSettings /></div>
       <div className="grid gap-2 pt-2 sm:grid-cols-3">
-        <Button variant="outline" className="h-11 rounded-xl" onClick={exportData}><Download className="size-4" />Exportar backup</Button>
-        <Button variant="outline" className="h-11 rounded-xl" asChild>
-          <label htmlFor="pr-import" className="cursor-pointer"><Upload className="size-4" />Importar backup<input id="pr-import" type="file" accept="application/json" className="sr-only" onChange={(e) => { const file = e.target.files?.[0]; e.target.value = ""; if (file) void importData(file); }} /></label>
-        </Button>
+        <BackupControls />
         <AlertDialog>
           <AlertDialogTrigger asChild><Button variant="outline" className="h-11 rounded-xl text-destructive hover:text-destructive"><Trash2 className="size-4" />Apagar tudo</Button></AlertDialogTrigger>
           <AlertDialogContent className="rounded-3xl">
@@ -329,16 +256,6 @@ function Preferences() {
           </AlertDialogContent>
         </AlertDialog>
       </div>
-      <AlertDialog open={pendingBackup !== null} onOpenChange={(open) => { if (!open) setPendingBackup(null); }}>
-        <AlertDialogContent className="rounded-3xl">
-          <AlertDialogHeader><AlertDialogTitle>Restaurar este backup?</AlertDialogTitle><AlertDialogDescription>
-            O arquivo contém {pendingBackup ? pendingBackup.appointments.length + pendingBackup.entries.length + pendingBackup.habits.length + pendingBackup.habitRoutines.length + pendingBackup.reminders.length + pendingBackup.importantDays.length : 0} registros:
-            {pendingBackup && ` ${pendingBackup.appointments.length} compromissos, ${pendingBackup.entries.length} acontecimentos, ${pendingBackup.habits.length} hábitos, ${pendingBackup.habitRoutines.length} rotinas, ${pendingBackup.reminders.length} lembretes e ${pendingBackup.importantDays.length} dias importantes.`}
-            {" "}Todos os dados e preferências atuais serão substituídos.
-          </AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel className="h-11 rounded-xl">Cancelar</AlertDialogCancel><AlertDialogAction className="h-11 rounded-xl" onClick={() => { if (!pendingBackup) return; setData(() => pendingBackup); setPendingBackup(null); toast.success("Backup restaurado"); }}>Restaurar backup</AlertDialogAction></AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
       <p className="pt-2 text-xs text-muted-foreground">Seus dados ficam guardados na sua conta e aparecem em qualquer aparelho em que você entrar.</p>
     </div>
   );

@@ -102,12 +102,62 @@ export type Database = {
           },
         ]
       }
+      habit_push_deliveries: {
+        Row: {
+          created_at: string
+          id: string
+          routine_id: string
+          scheduled_date: string
+          scheduled_time: string
+          status: string
+          subscription_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          routine_id: string
+          scheduled_date: string
+          scheduled_time: string
+          status?: string
+          subscription_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          routine_id?: string
+          scheduled_date?: string
+          scheduled_time?: string
+          status?: string
+          subscription_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "habit_push_deliveries_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "push_subscriptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "habit_push_deliveries_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       habit_routines: {
         Row: {
           active: boolean
           days: number[]
           id: string
           name: string
+          notify: boolean | null
+          time: string | null
           user_id: string
         }
         Insert: {
@@ -115,6 +165,8 @@ export type Database = {
           days?: number[]
           id: string
           name: string
+          notify?: boolean | null
+          time?: string | null
           user_id: string
         }
         Update: {
@@ -122,6 +174,8 @@ export type Database = {
           days?: number[]
           id?: string
           name?: string
+          notify?: boolean | null
+          time?: string | null
           user_id?: string
         }
         Relationships: [
@@ -187,21 +241,27 @@ export type Database = {
           date: string
           id: string
           name: string
+          note: string | null
           notify: boolean
+          photoPath: string | null
           user_id: string
         }
         Insert: {
           date: string
           id: string
           name: string
+          note?: string | null
           notify?: boolean
+          photoPath?: string | null
           user_id: string
         }
         Update: {
           date?: string
           id?: string
           name?: string
+          note?: string | null
           notify?: boolean
+          photoPath?: string | null
           user_id?: string
         }
         Relationships: [
@@ -305,6 +365,41 @@ export type Database = {
           weight?: string
         }
         Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       reminders: {
         Row: {
@@ -724,6 +819,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_habit_push_notifications: {
+        Args: { at_time?: string }
+        Returns: {
+          auth: string
+          delivery_id: string
+          endpoint: string
+          notice_key: string
+          p256dh: string
+          scheduled_time: string
+          subscription_id: string
+          title: string
+        }[]
+      }
       save_iagenda_data: { Args: { payload: Json }; Returns: undefined }
       wa_acquire_lease: { Args: { p_token: string }; Returns: boolean }
       wa_finalize_appointment: {

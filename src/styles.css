@@ -174,10 +174,7 @@
   --pixel-3: color-mix(in oklab, var(--primary) 65%, var(--surface-base));
   --pixel-4: var(--primary);
   --chart-1: var(--primary);
-  --card-padding: 1rem;
-  --card-padding-lg: 1.25rem;
-  --list-padding: .75rem;
-  --list-gap: .75rem;
+  --navigation-background: color-mix(in oklab, var(--primary) 8%, var(--surface-base));
 }
 
 :root.dark {
@@ -206,23 +203,6 @@
 }
 
 :root[data-text="large"] { font-size: 112.5%; }
-:root[data-density="compact"] {
-  --card-padding: .75rem;
-  --card-padding-lg: 1rem;
-  --list-padding: .5rem;
-  --list-gap: .5rem;
-}
-:root[data-density="compact"] .card-soft.p-4 { padding: var(--card-padding); }
-:root[data-density="compact"] .card-soft.p-3 { padding: var(--list-padding); }
-:root[data-density="compact"] .app-content ul > li.p-3 { padding: var(--list-padding); }
-:root[data-density="compact"] .app-content ul.space-y-2 > :not(:last-child),
-:root[data-density="compact"] .app-content ul.space-y-3 > :not(:last-child) { margin-block-end: var(--list-gap); }
-:root[data-density="compact"] .app-content .gap-6 { gap: 1rem; }
-@media (min-width: 768px) {
-  :root[data-density="compact"] .card-soft.md\:p-4 { padding: var(--card-padding); }
-  :root[data-density="compact"] .card-soft.md\:p-5,
-  :root[data-density="compact"] .card-soft.p-5 { padding: var(--card-padding-lg); }
-}
 .dark .text-primary { color: var(--primary-readable); }
 :root[data-motion="off"] *, :root[data-motion="off"] *::before, :root[data-motion="off"] *::after {
   animation-duration: .01ms !important;
@@ -240,3 +220,5 @@
     scroll-behavior: auto !important;
   }
 }
+
+.app-bottom-nav { background-color: var(--navigation-background); border-color: var(--primary-soft); }

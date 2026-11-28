@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { CalendarHeart, LogIn, UserPlus, Mail, ArrowLeft } from "lucide-react";
+import { CalendarHeart, LogIn, UserPlus, Mail, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/app/auth-provider";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,7 @@ function AuthPage() {
   const [mode, setMode] = useState<"entrar" | "criar" | "recuperar">("entrar");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -142,16 +143,19 @@ function AuthPage() {
           {mode !== "recuperar" && (
             <div className="space-y-2">
               <Label htmlFor="auth-password">Senha</Label>
+              <div className="relative">
               <Input
                 id="auth-password"
-                className="h-11 rounded-xl"
-                type="password"
+                className="h-11 rounded-xl pr-12"
+                type={showPassword ? "text" : "password"}
                 minLength={6}
                 autoComplete={mode === "criar" ? "new-password" : "current-password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
+              <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 size-11" aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"} aria-pressed={showPassword} onClick={() => setShowPassword((v) => !v)}>{showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}</Button>
+              </div>
             </div>
           )}
           {error && (

@@ -112,22 +112,33 @@ export function TodayHabits() {
 }
 
 export function RoutineSettings() {
-  const { data, saveRoutine, removeRoutine } = useStore();
+  const { data, saveRoutine, removeRoutine, setData } = useStore();
   const [editing, setEditing] = useState<HabitRoutine | null>(null);
   const [name, setName] = useState("");
   const [days, setDays] = useState<number[]>(ALL_WEEKDAYS);
+  const [time, setTime] = useState("");
+  const [notify, setNotify] = useState(false);
   const reset = () => {
     setEditing(null);
     setName("");
     setDays(ALL_WEEKDAYS);
+    setTime(""); setNotify(false);
   };
   return (
     <div className="space-y-5">
       <form
         className="space-y-3"
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
-          if (saveRoutine({ name, days, active: editing?.active ?? true }, editing?.id)) {
+          if (notify && !time) { toast.error("Informe o horário para notificar."); return; }
+          if (notify && !data.prefs.notifications) {
+            if (typeof Notification !== "undefined") {
+              const permission = await Notification.requestPermission();
+              if (permission !== "granted") { toast.error("Permissão negada. Os avisos aparecerão apenas dentro do aplicativo."); }
+            }
+            setData((d) => ({ ...d, prefs: { ...d.prefs, notifications: true } }));
+          }
+          if (saveRoutine({ name, days, active: editing?.active ?? true, time: time || null, notify }, editing?.id)) {
             reset();
             toast.success("Rotina salva");
           }
@@ -144,6 +155,9 @@ export function RoutineSettings() {
           />
         </div>
         <WeekdayPicker days={days} onChange={setDays} />
+        <div className="space-y-1.5"><Label htmlFor="routine-time">Horário</Label><Input id="routine-time" type="time" required={notify} className="h-11 rounded-xl" value={time} onChange={(e) => setTime(e.target.value)} /></div>
+        <div className="flex items-center justify-between gap-3"><Label htmlFor="routine-notify">Notificar no horário</Label><Switch id="routine-notify" checked={notify} onCheckedChange={setNotify} /></div>
+        <p className="text-xs text-muted-foreground">Avisos nos dias programados, com o aplicativo aberto. Hábitos já concluídos não geram aviso.</p>
         <div className="flex flex-wrap gap-2">
           <Button type="submit" className="h-11 rounded-xl">
             <Plus className="size-4" />
@@ -166,6 +180,7 @@ export function RoutineSettings() {
                   ? "Todos os dias"
                   : r.days.map((d) => WEEKDAY_LABELS[d]).join(" · ")}{" "}
                 · {r.active ? "Ativa" : "Pausada"}
+                {r.time ? ` · ${r.time}${r.notify ? " · Notificar" : ""}` : ""}
               </p>
             </div>
             <Switch
@@ -182,6 +197,7 @@ export function RoutineSettings() {
                 setEditing(r);
                 setName(r.name);
                 setDays(r.days);
+                setTime(r.time ?? ""); setNotify(r.notify ?? false);
               }}
             >
               <Pencil className="size-4" />

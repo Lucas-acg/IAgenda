@@ -5,6 +5,8 @@ export interface HabitRoutine {
   name: string;
   days: number[];
   active: boolean;
+  time?: string | null | undefined;
+  notify?: boolean | undefined;
 }
 export const ALL_WEEKDAYS = [0, 1, 2, 3, 4, 5, 6];
 export const WEEKDAY_LABELS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];

@@ -23,7 +23,7 @@ export interface Entry {
 }
 export interface HabitLog { id: string; name: string; kind: "recorrente" | "pontual"; date: string; time: string; note: string; routine_id?: string | null | undefined; }
 export interface DailyReminder { id: string; name: string; time: string; active: boolean; }
-export interface ImportantDay { id: string; name: string; date: string; notify: boolean; }
+export interface ImportantDay { id: string; name: string; date: string; notify: boolean; note?: string; photoPath?: string; }
 export interface Profile {
   name: string; avatarPath: string; height: string; weight: string; wake: string; sleep: string;
   waterGoal: number; sleepGoal: number;
@@ -39,10 +39,7 @@ const KEY = "iagenda:v1";
 
 export const defaultData = (): AppData => ({
   appointments: [], entries: [], habits: [], habitRoutines: [],
-  reminders: [
-    { id: uid(), name: "Beber água", time: "10:00", active: true },
-    { id: uid(), name: "Alongar", time: "16:00", active: false },
-  ],
+  reminders: [],
   importantDays: [],
   profile: { name: "", avatarPath: "", height: "", weight: "", wake: "07:00", sleep: "23:00", waterGoal: 8, sleepGoal: 8 },
   prefs: { notifications: false, weekStartsMonday: false, ...DEFAULT_APPEARANCE },

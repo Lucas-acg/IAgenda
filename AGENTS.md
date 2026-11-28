@@ -47,3 +47,7 @@ use the editor.
 - Compute scheduled-day streaks and case-insensitive suggestions in `habit-routines.ts`; shared pure rules keep checklist and tests consistent.
 - Store profile photos in an owner-scoped private Storage bucket and persist only their path; temporary signed URLs prevent public photo access.
 - Keep `/whatsapp` as a page redirect to `/telegram`, without renaming the registered webhook or integration storage; external bot registrations must remain valid.
+
+- Encrypt new backups with browser Web Crypto AES-256-GCM and PBKDF2-SHA256; never persist backup passwords, and retain validation and confirmation for legacy imports.
+- Keep routine notification eligibility in a pure helper; only active, scheduled, incomplete routines with a configured time are notified.
+- Reuse the private owner-scoped photo bucket for important-day photos; persist only paths and serve temporary signed URLs.

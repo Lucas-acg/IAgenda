@@ -10,6 +10,7 @@ import { nowTime, parseISODate, toISODate, useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { APPEARANCE_KEY, applyAppearance } from "@/lib/appearance";
 import { appointmentNoticeKey } from "@/lib/calendar-math";
+import { routineReminder } from "@/lib/routine-reminder";
 import { ProfileAvatar } from "./profile-photo";
 
 const NAV = [
@@ -33,7 +34,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     try { localStorage.setItem(APPEARANCE_KEY, JSON.stringify(data.prefs)); } catch { /* storage unavailable */ }
     media.addEventListener("change", apply);
     return () => media.removeEventListener("change", apply);
-  }, [data.prefs, ready]);
+  }, [data.prefs, ready, path]);
 
   return (
     <div className="min-h-dvh md:flex">
@@ -72,7 +73,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </main>
 
       {/* Mobile bottom nav */}
-      <nav aria-label="Principal" className="pb-safe fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 backdrop-blur md:hidden">
+      <nav aria-label="Principal" className="app-bottom-nav pb-safe fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 backdrop-blur md:hidden">
         <div className="mx-auto grid h-16 max-w-md grid-cols-5 items-center px-1">
           {[NAV[0], NAV[1]].map((n) => <MobileTab key={n.to} {...n} path={path} />)}
           <div className="flex justify-center">
@@ -132,9 +133,9 @@ function useReminderNotifications() {
         void showNotice(title, body);
       };
       const due = (when: Date) => { const diff = now.getTime() - when.getTime(); return diff >= 0 && diff < 10 * 60_000; };
-      data.reminders.filter((r) => r.active).forEach((r) => {
-        const [h = 0, m = 0] = r.time.split(":").map(Number); const when = new Date(now); when.setHours(h, m, 0, 0);
-        if (due(when)) notify(`r-${r.id}-${today}`, r.name, `Lembrete diário das ${r.time}`);
+      data.habitRoutines.forEach((r) => {
+        const notice = routineReminder(r, data.habits, now);
+        if (notice) notify(notice.key, r.name, `Sua rotina das ${r.time}`);
       });
       data.appointments.filter((a) => !a.done).forEach((a) => {
         const [h = 0, m = 0] = a.time.split(":").map(Number);
